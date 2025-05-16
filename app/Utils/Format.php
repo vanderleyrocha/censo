@@ -6,8 +6,11 @@ namespace App\Utils;
 class Format {
 
 
-
-	public static function digitOnly($string) {
+	public static function digitOnly($string) 
+	{
+		if (is_null($string)) {
+			return null;
+		}
 		return preg_replace("/[^0-9]/", "", $string);
 	}
 
@@ -56,6 +59,10 @@ class Format {
 
 	public static function dateBRtoEn($string) : string|null
 	{
+		if (is_null($string)) {
+			return null;
+		}
+
 		$date = explode("/", $string);
 		if (count($date) != 3) {
 			return null;

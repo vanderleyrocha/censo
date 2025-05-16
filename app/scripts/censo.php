@@ -9,93 +9,140 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 
 try {
 
-    function processFile($file_name, PDO $pdo)
+    function processFile($file_name, PDO $pdo, &$processadas_anteriormente, &$nao_processadas)
     {
-        $spreadsheet = IOFactory::load($file_name);
-        $worksheet = $spreadsheet->getActiveSheet();
+        try {
+            if (file_exists($file_name)) {
+                $spreadsheet = IOFactory::load($file_name);
+                $worksheet = $spreadsheet->getActiveSheet();
 
-        $escola = new Escola($file_name, $worksheet);
+                $escola = new Escola($file_name, $worksheet);
 
-        // echo "\n {$escola->escola_id} - {$escola->escola_nome}";
-
-        if ($escola->dados_por_turma) {
-            try {
-                $stmt = $pdo->prepare("SELECT * FROM escolas WHERE id = ?");
-                $stmt->execute([$escola->escola_id]);
-                $escola_record = $stmt->fetch(PDO::FETCH_ASSOC);
-
-                if (!$escola_record) {
-                    $names = explode("\\", $file_name);
-                    $municipio = $names[4];
-                    $nome_arquivo = end($names);
-                    echo "\n\n ---- Escola não encontrada! -----";
-                    echo "\n {$nome_arquivo} - {$municipio}";
-                    echo "\n";
+                if ($escola->dados_por_turma == 0) {
+                    $nao_processadas++;
                 } else {
-                    if (!$escola_record['atualizado']) {
-                        $escola->getTurmas();
-                        try {
-                            $pdo->beginTransaction();
-                            foreach ($escola->turmas as $turma) {
-                                foreach ($turma->alunos as $aluno) {
 
-                                    $stmt = $pdo->prepare("SELECT 1 FROM alunos WHERE id = ?");
-                                    $stmt->execute([$aluno['id']]);
-                                    if (!$stmt->fetch()) {
-                                        $stmt = $pdo->prepare("INSERT INTO alunos (
-                                            id, ano_censo, cod_inep_escola, escola, municipio, uf, localizacao, 
-                                            dependencia, cod_turma, nome_turma, tipo_mediacao, tipo_atendimento, 
-                                            estrutura_curricular, local_funcionamento_turma, dias_semana, horario, 
-                                            modalidade, etapa, forma_organizacao, libras, cod_inep_aluno, nome, 
-                                            dt_nascimento, cor, sexo, deficiencia, recursos, cpf
-                                        ) VALUES (
-                                            :id, :ano_censo, :cod_inep_escola, :escola, :municipio, :uf, :localizacao,
-                                            :dependencia, :cod_turma, :nome_turma, :tipo_mediacao, :tipo_atendimento,
-                                            :estrutura_curricular, :local_funcionamento_turma, :dias_semana, :horario,
-                                            :modalidade, :etapa, :forma_organizacao, :libras, :cod_inep_aluno, :nome,
-                                            :dt_nascimento, :cor, :sexo, :deficiencia, :recursos, :cpf
-                                        )");
-                                        $stmt->execute($aluno);
+                    try {
+                        $stmt = $pdo->prepare("SELECT * FROM escolas WHERE id = ?");
+                        $stmt->execute([$escola->escola_id]);
+                        $escola_record = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                        if (!$escola_record) {
+
+                            $stmt = $pdo->prepare("SELECT * FROM cidades WHERE nome = ? AND estado_id = 12");
+                            $stmt->execute([$escola->escola_nome]);
+                            $cidade = $stmt->fetch(PDO::FETCH_ASSOC);
+
+                            $stmt = $pdo->prepare("INSERT INTO escolas (
+                                id, nome, zona, cidade_id, dependencia, situacao, atualizado, created_at
+                            ) VALUES (
+                                :id, :nome, :zona, :cidade_id, :dependencia, :situacao, :atualizado, :created_at
+                            )");
+                            $stmt->execute([
+                                $escola->escola_id ?? 0,
+                                $escola->escola_nome ?? "",
+                                $escola->escola_localizacao ?? "",
+                                (!$cidade) ? 0 : $cidade["id"],
+                                $escola->escola_dependencia ?? "",
+                                "Em funcionamento",
+                                1,
+                                date("Y-m-d H:i:s")  // created_at
+                            ]);
+
+                            $stmt = $pdo->prepare("SELECT * FROM escolas WHERE id = ?");
+                            $stmt->execute([$escola->escola_id]);
+                            $escola_record = $stmt->fetch(PDO::FETCH_ASSOC);
+                        }
+                    } catch (\Exception $e) {
+                        $erro = $e->getMessage();
+                        $linha = $e->getLine();
+                        echo "\n\n {$file_name} \n Linha: $linha, Escola: {$escola->escola_id} - {$escola->escola_nome} \n Erro: $erro";
+                        die();
+                    }
+                    try {
+
+                        if (!$escola_record['atualizado']) {
+                            $escola->getTurmas();
+                            try {
+                                $pdo->beginTransaction();
+                                foreach ($escola->turmas as $turma) {
+                                    foreach ($turma->alunos as $aluno) {
+
+                                        $stmt = $pdo->prepare("SELECT 1 FROM alunos WHERE cod_inep_aluno = ? AND cod_turma = ?");
+                                        $stmt->execute([$aluno['cod_inep_aluno'], $aluno['cod_turma']]);
+                                        if (!$stmt->fetch()) {
+                                            $stmt = $pdo->prepare("INSERT INTO alunos (
+                                                ano_censo, cod_inep_escola, escola, municipio, uf, localizacao, 
+                                                dependencia, cod_turma, nome_turma, tipo_mediacao, tipo_atendimento, 
+                                                estrutura_curricular, local_funcionamento_turma, dias_semana, horario, 
+                                                modalidade, etapa, forma_organizacao, libras, cod_inep_aluno, nome, 
+                                                dt_nascimento, cor, sexo, deficiencia, recursos, cpf
+                                            ) VALUES (
+                                                :ano_censo, :cod_inep_escola, :escola, :municipio, :uf, :localizacao,
+                                                :dependencia, :cod_turma, :nome_turma, :tipo_mediacao, :tipo_atendimento,
+                                                :estrutura_curricular, :local_funcionamento_turma, :dias_semana, :horario,
+                                                :modalidade, :etapa, :forma_organizacao, :libras, :cod_inep_aluno, :nome,
+                                                :dt_nascimento, :cor, :sexo, :deficiencia, :recursos, :cpf
+                                            )");
+                                            $stmt->execute($aluno);
+                                        }
                                     }
                                 }
+                                $stmt = $pdo->prepare("UPDATE escolas SET atualizado = 1 WHERE id = ?");
+                                $stmt->execute([$escola->escola_id]);
+                                $pdo->commit();
+                            } catch (\Exception $e) {
+                                echo "\nErro ao processar aluno
+                                    \nNome: {$aluno['nome']}
+                                    \nEscola: {$escola->escola_id} - {$escola->escola_nome}
+                                    \nLinha: " . $e->getLine() .
+                                    "\nMessage: " . $e->getMessage();
+                                foreach ($aluno as $key => $aluno) {
+                                    "\nKey {$key} - Nome: {$aluno['nome']}";
+                                }
+                                $pdo->rollBack();
                             }
-                            $stmt = $pdo->prepare("UPDATE escolas SET atualizado = 1 WHERE id = ?");
-                            $stmt->execute([$escola->escola_id]);
-                            $pdo->commit();
-                        } catch (\Exception $e) {
-                            echo "\nErro ao processar aluno {$aluno['nome']} - {$escola->escola_id} - {$escola->escola_nome}: " . $e->getMessage();
-                            $pdo->rollBack();
+                        } else {
+                            $processadas_anteriormente++;
                         }
-                    } else {
-                        echo "\n{$escola->escola_id} - {$escola->escola_nome}: Escola já foi atualizada";
+                    } catch (\Exception $e) {
+                        $erro = $e->getMessage();
+                        $linha = $e->getLine();
+                        echo "\n\n {$file_name} \n Linha: $linha, Escola: {$escola->escola_id} - {$escola->escola_nome} \n Erro: $erro";
+                        die();
                     }
+                    flush();
+                    
                 }
-            } catch (\Exception $e) {
-                echo "\n\n Erro:" . $e->getMessage();
-                die();
-            }
-            flush();
-        }
 
-        unset($escola);
-        $worksheet->disconnectCells();
-        $spreadsheet->disconnectWorksheets();
-        unset($worksheet);
-        unset($spreadsheet);
-        gc_collect_cycles();
+                unset($escola);
+                $worksheet->disconnectCells();
+                $spreadsheet->disconnectWorksheets();
+                unset($worksheet);
+                unset($spreadsheet);
+                gc_collect_cycles();
+            }
+        } catch (\Exception $e) {
+            $erro = $e->getMessage();
+            $linha = $e->getLine();
+            echo "\n\nErro ao tentar ler o arquivo {$file_name} \n Linha: $linha \n Erro: $erro";
+            // die();
+        }
     }
 
     function processExcelFiles($directory, PDO $pdo)
     {
         $files = new RecursiveIteratorIterator(new RecursiveDirectoryIterator($directory), RecursiveIteratorIterator::LEAVES_ONLY);
         $count = 0;
+        $processadas_anteriormente = 0;
+        $nao_processadas = 0;
         foreach ($files as $file) {
             if (!$file->isDir() && in_array($file->getExtension(), ['xlsx', 'xls'])) {
 
                 $file_name = $file->getPathname();
-                processFile($file_name, $pdo);
+                processFile($file_name, $pdo, $processadas_anteriormente, $nao_processadas);
                 $count++;
-                echo "\rEscolas processadas: " . $count;
+                echo "\rTotal de arquivos {$count} - Processados anteriormente: {$processadas_anteriormente} - Descartados: {$nao_processadas}";
                 flush();
             }
         }
@@ -109,14 +156,11 @@ try {
     $pdo = new PDO('mysql:host=localhost;dbname=censo', 'root', '');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    $stmt = $pdo->prepare("SELECT * FROM escolas WHERE id = ?");
-    $stmt->execute([12011517]);
-    $escola_record = $stmt->fetch(PDO::FETCH_ASSOC);
-    $baseDir = '..\\..\\public\\municipios';
-
+    $baseDir = '.\\outros';
+    echo "\n{$baseDir}";
     processExcelFiles($baseDir, $pdo);
 
-    echo "Processing completed successfully!\n";
+    echo "\n\nProcessing completed successfully!\n";
 } catch (PDOException $e) {
     die("Database connection failed: " . $e->getMessage());
 }
@@ -150,25 +194,41 @@ class Escola
 
         $this->highestRow = $worksheet->getHighestRow();
 
-        $this->dados_por_turma = ($this->getLinha(1, "A", "Informações da Turma") < $this->highestRow);
+        $this->dados_por_turma = $this->getLinha(1, "A", "Informações da Turma");
 
-        $linha = $this->getLinha(1, "A", "Código da escola:");
+        if ($this->dados_por_turma  !== false) {
+            $linha = $this->getLinha(1, "A", "Código da escola:");
 
-        $this->escola_id = $this->getValue($linha++, "B");
-        $this->escola_nome = $this->getValue($linha++, "B");
-        $this->escola_uf = $this->getValue($linha++, "B");
-        $this->escola_municipio = $this->getValue($linha++, "B");
-        $this->escola_localizacao = $this->getValue($linha++, "B");
-        $this->escola_dependencia = $this->getValue($linha++, "B");
+            $this->escola_id = $this->getValue($linha, "B");
 
-        $this->linha_atual = $linha;
+            if (!is_numeric($this->escola_id)) {
+                $this->dados_por_turma = false;
+            } else {
+                $linha++;
+                $this->escola_nome = $this->getValue($linha++, "B");
+                $this->escola_uf = $this->getValue($linha++, "B");
+                $this->escola_municipio = $this->getValue($linha++, "B");
+                $this->escola_localizacao = $this->getValue($linha++, "B");
+                $this->escola_dependencia = $this->getValue($linha++, "B");
+
+                $this->linha_atual = $linha;
+            }
+        }
     }
 
-    public function getLinha($linha_inicial, $coluna, $txt): int
+    public function getLinha($linha_inicial, $coluna, $txt, $max = 100): int
     {
         $linha = $linha_inicial;
+        $abort = false;
         while (($linha <= $this->highestRow) && $this->worksheet->getCell("{$coluna}{$linha}")->getValue() != $txt) {
             $linha++;
+            if ($linha > ($linha_inicial + $max)) {
+                $abort = true;
+                break;
+            }
+        }
+        if ($abort) {
+            return 0;
         }
         return $linha;
     }
@@ -229,7 +289,6 @@ class Turma
                 $nome_aluno = $escola->getValue($linha, "C");
 
                 $aluno = [
-                    'id' => $cod_inep_aluno,
                     'ano_censo' => 2024,
                     'cod_inep_escola' => $escola->escola_id,
                     'escola' => $escola->escola_nome,

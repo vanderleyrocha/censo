@@ -153,7 +153,7 @@ try {
     ini_set('memory_limit', '1024M');
 
     // Create PDO connection
-    $pdo = new PDO('mysql:host=localhost;dbname=censo', 'root', '');
+    $pdo = new PDO('mysql:host=localhost;dbname=u815349007_censo', 'u815349007_censo', '5*r09HGyZ');
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
     $baseDir = '.\\outros';

@@ -1,0 +1,1 @@
+Criar um script (comando artisan) escrito em PHP 8.2 usando o framework laravel 12.20 e phpspredsheet 4.4 com o nome

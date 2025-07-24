@@ -1,1 +1,29 @@
 Criar um script (comando artisan) escrito em PHP 8.2 usando o framework laravel 12.20 e phpspredsheet 4.4 com o nome
+
+Os arquivos anexos fazem parte de uma aplicação Laravel 12 + Inertia + React.
+Preciso criar um novo layout, novo controller e as páginas (arquivos .jsx) necessárias para dar ao usuário a possibilidade de selecionar uma lista de escolas (composta pela junção das tabelas escolas – Model Escola e cidades – Model Cidade ) a partir de filtros para os campos escolas.cidade_id, escolas.dependencia e escolas.zona e marcar nessa lista as escolas que deverão ter o campo escolas.responsavel_censo atualizados com o valor de users.servidor_id
+
+Criar script (Comando Artisan) para selecionar todos os registros da tabela servidores (Model Servidor) em que o campo email não seja nulo e para cada linha encontrada, caso não exista um registro na tabela users com users.servidor_id = servidores.id, criar um registro na tabela users (Model User) da seguinte forma:
+users.name = servidores.nome, users.email = servidores.email, users.servidor_id = servidores.id, users.password = servidores.matricula (o valor de servidores.matricula deve ser criptografado de acordo com o padrão do Laravel 12 para senhas)
+
+Tenho a seguinte situação:
+1. Aplicação Laravel 12 + Inertia + React + spatie/laravel-permission
+
+2. Banco de dados (tabelas criadas usando suas sugestões anteriores)
+2.1. users (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `servidor_id`, `created_at`, `updated_at`) 
+2.2. roles (`id`, `name`, `guard_name`, `created_at`, `updated_at`)
+2.3. model_has_roles (`role_id`, `model_type`, `model_id`)
+2.4. model_has_permissions (`permission_id`, `model_type`, `model_id`)
+2.5. role_has_permissions (`permission_id`, `role_id`)
+
+3. Informações adicionais
+3.1. Já preenchi a tabela roles com os valores ((1,Administrador do sistema,admin,2025-07-24 09:07:03,2025-07-24 09:07:03),
+(2,Administrador Estadual,state,2025-07-24 09:07:03,2025-07-24 09:07:03),
+(3,Administrador Regional,regional,2025-07-24 09:07:03,2025-07-24 09:07:03),
+(4,Técnico Censo Escolar,school,2025-07-24 09:07:03,2025-07-24 09:07:03))
+3.2. a tabela users já está preenchida com 14 usuários com ids que vão de 1 14
+3.3. o usuário de id igual a 1 deve ser o Administrador do Sistema com acesso à todas as funcionalidades, inclusive de gerenciar usuários
+
+4. Perguntas
+4.1. Todas as tabelas listadas no item 2 são realmente necessárias para trabalhar com spatie/laravel-permission
+4.2. Como devo proceder  para preencher as tabelas necessárias para liberar o acesso do usuário administrador direto no banco de dados? quais registros devem ser incluídos?

@@ -13,7 +13,7 @@ class EscolaController extends Controller
     public function index(Request $request)
     {
         $query = Escola::query()
-            ->with('cidade')
+            ->with('cidade.regional')
             ->select([
                 'id',
                 'nome',
@@ -57,14 +57,29 @@ class EscolaController extends Controller
         $tecnicos = Servidor::whereIn('funcao', ['TÉCNICO', 'ASSESSOR TÉCNICO'])->orderBy('nome')->get(['id', 'nome']);
 
         $escolas = Escola::query()
-            ->with(['cidade', 'responsavel'])
+            ->with(['cidade.regional', 'responsavel'])
             ->when($request->cidade_id, fn($query, $cidade_id) => $query->where('cidade_id', $cidade_id))
             ->when($request->dependencia, fn($query, $dependencia) => $query->where('dependencia', $dependencia))
             ->when($request->zona, fn($query, $zona) => $query->where('zona', $zona))
             ->orderBy('nome')
             ->get();
 
-        return Inertia::render('Escolas/Atribuir', [
+        // Verificar permissões do usuário
+        $canView = $request->user()->can('view-school');
+        $canEdit = $request->user()->can('edit-regional');
+
+        // Se não tiver permissão para visualizar, retornar erro
+        if (!$canView) {
+            abort(403, 'Você não tem permissão para visualizar escolas.');
+        }
+
+        $servidor = Servidor::with("regionais")->find($request->user()->servidor_id);
+
+        return [
+            'canEdit' => $canEdit,
+            'userRegionalIds' => $servidor ? $servidor->regionais->pluck('id') : collect(),
+        ];
+        $vars = [
             'headerTitle' => 'Atribuir Técnico Responsável pela Escola',
             'escolas' => $escolas,
             'filters' => $request->only(['cidade_id', 'dependencia', 'zona']),
@@ -72,7 +87,10 @@ class EscolaController extends Controller
             'dependencias' => $dependencias,
             'zonas' => $zonas,
             'tecnicos' => $tecnicos,
-        ]);
+            'canEdit' => $canEdit,
+            'userRegionalIds' => $servidor ? $servidor->regionais->pluck('id') : collect(),
+        ];
+        return Inertia::render('Escolas/Atribuir', $vars);
     }
 
     public function atualizarResponsavel(Request $request)
@@ -83,8 +101,27 @@ class EscolaController extends Controller
             'servidor_id' => 'required|exists:servidores,id',
         ]);
 
-        // return $request;
+        // Verificar se o usuário tem permissão para editar
+        if (!$request->user()->can('edit-regional')) {
+            abort(403, 'Você não tem permissão para editar vínculos de escolas.');
+        }
 
+        // Obter as escolas selecionadas com suas cidades e regionais
+        $escolas = Escola::with('cidade.regional')
+            ->whereIn('id', $request->escolas_ids)
+            ->get();
+
+        // Verificar se o usuário é responsável pela regional de todas as escolas selecionadas
+        $servidor = Servidor::with("regionais")->find($request->user()->servidor_id);
+        $userRegionalIds = $servidor ? $servidor->regionais->pluck('id') : collect();
+
+        foreach ($escolas as $escola) {
+            if (!$userRegionalIds->contains($escola->cidade->regional_id)) {
+                abort(403, 'Você só pode editar escolas vinculadas à sua regional.');
+            }
+        }
+
+        // Atualizar os responsáveis
         Escola::whereIn('id', $request->escolas_ids)
             ->update(['responsavel_censo' => $request->servidor_id]);
 

@@ -7,14 +7,19 @@ Criar script (Comando Artisan) para selecionar todos os registros da tabela serv
 users.name = servidores.nome, users.email = servidores.email, users.servidor_id = servidores.id, users.password = servidores.matricula (o valor de servidores.matricula deve ser criptografado de acordo com o padrão do Laravel 12 para senhas)
 
 Tenho a seguinte situação:
-1. Aplicação Laravel 12 + Inertia + React + spatie/laravel-permission
+1. Aplicação Laravel 12 + Inertia + React + spatie/laravel-permission + laravel/breezer
 
-2. Banco de dados (tabelas criadas usando suas sugestões anteriores)
-2.1. users (`id`, `name`, `email`, `email_verified_at`, `password`, `remember_token`, `servidor_id`, `created_at`, `updated_at`) 
-2.2. roles (`id`, `name`, `guard_name`, `created_at`, `updated_at`)
-2.3. model_has_roles (`role_id`, `model_type`, `model_id`)
-2.4. model_has_permissions (`permission_id`, `model_type`, `model_id`)
-2.5. role_has_permissions (`permission_id`, `role_id`)
+2. Banco de dados
+2.1. users (id, name, email, email_verified_at, password, remember_token, servidor_id, created_at, updated_at) 
+2.2. roles (id, name, guard_name, created_at, updated_at)
+2.3. model_has_roles (role_id, model_type, model_id)
+2.4. permissions (id, name, guard_name, created_at, updated_at)
+2.5. model_has_permissions (permission_id, model_type, model_id)
+2.6. role_has_permissions (permission_id, role_id)
+
+2.7. cidades (id, nome, estado_id, regional_id, ibge)
+2.8. escolas (id, nome, endereco, bairro, zona, cidade_id, dependencia, situacao, regulamentacao, tipo_localizacao, modalidade, portaria, ano_adesao, email, atualizado, responsavel_censo, alunos_censo_2024, alunos_simaed, created_at, updated_at)
+2.9. regionais (id, nome, sigla, servidor_id, created_at, updated_at)
 
 3. Informações adicionais
 3.1. Já preenchi a tabela roles com os valores ((1,Administrador do sistema,admin,2025-07-24 09:07:03,2025-07-24 09:07:03),

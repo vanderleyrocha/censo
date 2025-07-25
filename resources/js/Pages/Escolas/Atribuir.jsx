@@ -2,7 +2,7 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
 import { useState } from 'react';
 
-export default function Atribuir({ escolas, filters, cidades, dependencias, zonas, tecnicos, auth, headerTitle  }) {
+export default function Atribuir({ escolas, filters, cidades, dependencias, zonas, tecnicos, auth, headerTitle, canEdit, userRegionalIds }) {
     const [selectedSchools, setSelectedSchools] = useState([]);
     const [servidorId, setServidorId] = useState('');
 
@@ -22,6 +22,8 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
     };
 
     const toggleSchoolSelection = (id) => {
+        if (!canEdit) return;
+        
         setSelectedSchools(prev => 
             prev.includes(id) 
                 ? prev.filter(schoolId => schoolId !== id) 
@@ -30,10 +32,17 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
     };
 
     const selectAllSchools = () => {
-        if (selectedSchools.length === escolas.length) {
+        if (!canEdit) return;
+        
+        // Get all schools that belong to any of the user's regionals
+        const escolasDasRegionais = escolas.filter(escola => 
+            userRegionalIds.includes(escola.cidade?.regional_id)
+        );
+        
+        if (selectedSchools.length === escolasDasRegionais.length) {
             setSelectedSchools([]);
         } else {
-            setSelectedSchools(escolas.map(escola => escola.id));
+            setSelectedSchools(escolasDasRegionais.map(escola => escola.id));
         }
     };
 
@@ -47,10 +56,13 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
         });
     };
 
-    // Determinar quais colunas mostrar com base nos filtros ativos
     const showCidadeColumn = !filters.cidade_id;
     const showDependenciaColumn = !filters.dependencia;
     const showZonaColumn = !filters.zona;
+
+    const canEditSchool = (escola) => {
+        return canEdit && userRegionalIds.includes(escola.cidade?.regional_id);
+    };
 
     return (
         <AuthenticatedLayout headerTitle={headerTitle}>
@@ -153,6 +165,7 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                     onChange={(e) => setServidorId(e.target.value)}
                                     className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
                                     required
+                                    disabled={!canEdit}
                                 >
                                     <option value="">Selecione um técnico</option>
                                     {tecnicos && tecnicos.map(tecnico => (
@@ -161,7 +174,6 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                         </option>
                                     ))}
                                     <option value={auth.user.servidor_id}>{auth.user.name} (Você)</option>
-                                    {/* Adicione mais opções se necessário */}
                                 </select>
                             </div>
 
@@ -170,12 +182,14 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                     <thead className="bg-gray-50">
                                         <tr>
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                <input
-                                                    type="checkbox"
-                                                    checked={selectedSchools.length === escolas.length && escolas.length > 0}
-                                                    onChange={selectAllSchools}
-                                                    className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                                />
+                                                {canEdit && (
+                                                    <input
+                                                        type="checkbox"
+                                                        checked={selectedSchools.length === escolas.filter(e => userRegionalIds.includes(e.cidade?.regional_id)).length && escolas.length > 0}
+                                                        onChange={selectAllSchools}
+                                                        className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                                                    />
+                                                )}
                                             </th>
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Nome da Escola
@@ -202,39 +216,55 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {escolas.length > 0 ? (
-                                            escolas.map((escola) => (
-                                                <tr key={escola.id} className={selectedSchools.includes(escola.id) ? 'bg-green-50' : ''}>
-                                                    <td className="px-6 py-4 whitespace-nowrap">
-                                                        <input
-                                                            type="checkbox"
-                                                            checked={selectedSchools.includes(escola.id)}
-                                                            onChange={() => toggleSchoolSelection(escola.id)}
-                                                            className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
-                                                        />
-                                                    </td>
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                        {escola.nome}
-                                                    </td>
-                                                    {showCidadeColumn && (
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {escola.cidade?.nome}
+                                            escolas.map((escola) => {
+                                                const isFromUserRegional = userRegionalIds.includes(escola.cidade?.regional_id);
+                                                const canEditThisSchool = canEditSchool(escola);
+                                                const rowClass = selectedSchools.includes(escola.id) 
+                                                    ? 'bg-green-50' 
+                                                    : !isFromUserRegional 
+                                                        ? 'bg-gray-50' 
+                                                        : '';
+
+                                                return (
+                                                    <tr key={escola.id} className={rowClass}>
+                                                        <td className="px-6 py-4 whitespace-nowrap">
+                                                            {canEdit && (
+                                                                <input
+                                                                    type="checkbox"
+                                                                    checked={selectedSchools.includes(escola.id)}
+                                                                    onChange={() => toggleSchoolSelection(escola.id)}
+                                                                    disabled={!canEditThisSchool}
+                                                                    className={`h-4 w-4 ${canEditThisSchool ? 'text-green-600 focus:ring-green-500' : 'text-gray-400'} border-gray-300 rounded`}
+                                                                />
+                                                            )}
                                                         </td>
-                                                    )}
-                                                    {showDependenciaColumn && (
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {escola.dependencia}
+                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                            {escola.nome}
                                                         </td>
-                                                    )}
-                                                    {showZonaColumn && (
+                                                        {showCidadeColumn && (
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                {escola.cidade?.nome}
+                                                                {!isFromUserRegional && (
+                                                                    <span className="ml-2 text-xs text-gray-400">(outra regional)</span>
+                                                                )}
+                                                            </td>
+                                                        )}
+                                                        {showDependenciaColumn && (
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                {escola.dependencia}
+                                                            </td>
+                                                        )}
+                                                        {showZonaColumn && (
+                                                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                {escola.zona}
+                                                            </td>
+                                                        )}
                                                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {escola.zona}
+                                                            {escola.responsavel?.nome || 'Não definido'}
                                                         </td>
-                                                    )}
-                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                        {escola.responsavel?.nome || 'Não definido'}
-                                                    </td>
-                                                </tr>
-                                            ))
+                                                    </tr>
+                                                );
+                                            })
                                         ) : (
                                             <tr>
                                                 <td colSpan={5 + (showCidadeColumn ? 1 : 0) + (showDependenciaColumn ? 1 : 0) + (showZonaColumn ? 1 : 0)} className="px-6 py-4 text-center text-sm text-gray-500">
@@ -246,7 +276,7 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                 </table>
                             </div>
 
-                            {escolas.length > 0 && (
+                            {escolas.length > 0 && canEdit && (
                                 <div className="mt-4 flex justify-end">
                                     <button
                                         type="submit"

@@ -150,6 +150,9 @@ export default function Index({ escolas, cidades, filters, dependencias, zonas }
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Zona
                                             </th>
+                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                Regional
+                                            </th>
                                             <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Alunos SIMAED
                                             </th>
@@ -175,6 +178,9 @@ export default function Index({ escolas, cidades, filters, dependencias, zonas }
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {escola.zona}
+                                                </td>
+                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                    {escola.cidade?.regional?.nome || 'N/A'}
                                                 </td>
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 text-right">
                                                     {formatNumber(escola.alunos_simaed)}

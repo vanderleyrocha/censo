@@ -11,6 +11,7 @@ use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\EscolaController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ServidorController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -24,8 +25,10 @@ Route::middleware(['auth', 'verified', 'role:system-admin'])->group(function () 
     Route::post('roles/{role}/permissions', [RolePermissionController::class, 'syncPermissions']);
     Route::get('permissions', [RolePermissionController::class, 'permissionsIndex'])->name('permissions');
 
-    Route::resource('users', UserController::class);
-
+    Route::resource('users', RegisteredUserController::class)->except(['show']);
+    Route::get('users/{user}', [RegisteredUserController::class, 'show'])->name('users.show');
+    Route::get('users/{user}/edit-roles', [RegisteredUserController::class, 'editRoles'])->name('users.editRoles');
+    Route::put('users/{user}/update-roles', [RegisteredUserController::class, 'updateRoles'])->name('users.updateRoles');
 });
 
 // Rotas de Autenticação para convidados
@@ -69,6 +72,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Confirmação de senha
     Route::get('confirm-password', [ConfirmablePasswordController::class, 'show'])->name('password.confirm');
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
+
+    Route::get('/servidores/{servidor}', [ServidorController::class, 'show'])->name('servidores.show');
 });
 
 // Rotas de verificação de email

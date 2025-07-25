@@ -20,42 +20,66 @@ class RolePermissionController extends Controller
         ]);
     }
 
+    public function create()
+    {
+        return Inertia::render('Admin/Roles/Create', [
+            'permissions' => Permission::all()->pluck('name')
+        ]);
+    }
+
     // Criar nova role
     public function store(Request $request)
     {
         $validated = $request->validate([
             'name' => 'required|string|unique:roles,name',
+            'description' => 'nullable|string|max:255',
             'permissions' => 'array'
         ]);
 
-        $role = Role::create(['name' => $validated['name']]);
+        $role = Role::create([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null
+        ]);
 
         if (!empty($validated['permissions'])) {
             $role->syncPermissions($validated['permissions']);
         }
 
-        return redirect()->route('roles.index')->with('success', 'Role criada com sucesso!');
+        return redirect()->route('roles.index')->with('success', 'Função criada com sucesso!');
     }
 
+    public function edit(Role $role)
+    {
+        return Inertia::render('Admin/Roles/Edit', [
+            'role' => $role->load('permissions'),
+            'permissions' => Permission::all()->pluck('name')
+        ]);
+    }
+    
     // Atualizar role
     public function update(Request $request, Role $role)
     {
         $validated = $request->validate([
             'name' => 'required|string|unique:roles,name,' . $role->id,
+            'description' => 'nullable|string|max:255',
             'permissions' => 'array'
         ]);
 
-        $role->update(['name' => $validated['name']]);
+        $role->update([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null
+        ]);
+
         $role->syncPermissions($validated['permissions'] ?? []);
 
-        return redirect()->route('roles.index')->with('success', 'Role atualizada com sucesso!');
+        return redirect()->route('roles.index')->with('success', 'Função atualizada com sucesso!');
     }
 
     // Deletar role
     public function destroy(Role $role)
     {
         $role->delete();
-        return redirect()->route('roles.index')->with('success', 'Role removida com sucesso!');
+        return redirect()->route('roles.index')->with('success', 'Função removida com sucesso!');
     }
 
     // Sincronizar permissions para uma role
@@ -77,10 +101,12 @@ class RolePermissionController extends Controller
 
     public function setAdminPermissions()
     {
-        $adminRole = Role::findByName('system_admin');
+        $roles = Role::all();
         $user = User::find(1);
-        $user->assignRole($adminRole);
-        $permissions = Permission::all();
-        $adminRole->syncPermissions($permissions);
+        foreach ($roles as $role) {
+            $user->assignRole($role);
+            $permissions = Permission::all();
+            $role->syncPermissions($permissions);
+        }
     }
 }

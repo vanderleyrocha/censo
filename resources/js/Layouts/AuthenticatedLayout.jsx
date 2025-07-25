@@ -7,23 +7,41 @@
 */
 
 import { Link, usePage } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Dropdown from '@/Components/Dropdown';
 import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
+import FlashMessage from '@/Components/FlashMessage';
 
 export default function AuthenticatedLayout({ header, children, headerTitle }) {
-    const user = usePage().props.auth.user;
+    const { props } = usePage();
+    const user = props.auth.user;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
 
-    // const isAdmin = user?.roles?.some(role => role.name === 'admin');
-    const { auth } = usePage().props;
-    const isAdmin = auth.user?.roles.includes('admin');
+    const { flash } = usePage().props;
+    const [flashMessage, setFlashMessage] = useState(flash?.success || null);
+    const [flashError, setFlashError] = useState(flash?.error || null);
 
-    // const isAdmin = true;
+    const isAdmin = user?.roles.includes('system-admin');
+
+    // Atualiza mensagens quando as props mudam
+    useEffect(() => {
+        setFlashMessage(props.flash?.success || null);
+        setFlashError(props.flash?.error || null);
+    }, [props.flash]);
+
+    // Auto-fechamento das mensagens após 5 segundos
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setFlashMessage(null);
+            setFlashError(null);
+        }, 10000);
+        return () => clearTimeout(timer);
+    }, [flashMessage, flashError]);
 
     return (
-        <div className="min-h-screen bg-gray-50 flex">
+        <div className="min-h-screen bg-gray-50 flex flex-col">
+
             {/* Sidebar */}
             <div className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-green-800 text-white transition-all duration-300 fixed h-full z-10`}>
                 <div className="p-4 flex items-center justify-between border-b border-green-700">
@@ -37,7 +55,10 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
                             <img className="h-10 w-auto" src="/images/logo.png" alt="Logo Governo do Acre" />
                         </Link>
                     )}
-                    <button onClick={() => setSidebarOpen(!sidebarOpen)} className="text-green-200 hover:text-white">
+                    <button
+                        onClick={() => setSidebarOpen(!sidebarOpen)}
+                        className="text-green-200 hover:text-white focus:outline-none"
+                    >
                         {sidebarOpen ? (<i className="fas fa-chevron-left"></i>) : (<i className="fas fa-chevron-right"></i>)}
                     </button>
                 </div>
@@ -46,7 +67,7 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
                 <div className="sm:hidden p-4">
                     <button
                         onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                        className="text-white hover:text-green-200"
+                        className="text-white hover:text-green-200 focus:outline-none"
                     >
                         <i className={`fas ${mobileMenuOpen ? 'fa-times' : 'fa-bars'}`}></i>
                     </button>
@@ -92,28 +113,46 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
                                     <i className="fas fa-key mr-3"></i>
                                     {sidebarOpen && <span>Permissões</span>}
                                 </ResponsiveNavLink>
+
+                                <ResponsiveNavLink
+                                    href={route('users.index')}
+                                    active={route().current('users.*')}
+                                    className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
+                                    activeClassName="bg-green-900"
+                                >
+                                    <i className="fas fa-users mr-3"></i>
+                                    {sidebarOpen && <span>Usuários</span>}
+                                </ResponsiveNavLink>
                             </>
                         )}
 
-                        <ResponsiveNavLink
-                            href={route('escolas.index')}
-                            active={route().current('escolas.index')}
-                            className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
-                            activeClassName="bg-green-900"
-                        >
-                            <i className="fas fa-school mr-3"></i>
-                            {sidebarOpen && <span>Escolas</span>}
-                        </ResponsiveNavLink>
+                        <>
+                            <div className="pt-2 mt-2 border-t border-green-700">
+                                <p className="px-3 py-1 text-xs text-green-200 uppercase tracking-wider">
+                                    {sidebarOpen && 'LINKS'}
+                                </p>
+                            </div>
 
-                        <ResponsiveNavLink
-                            href={route('escolas.atribuir')}
-                            active={route().current('escolas.atribuir')}
-                            className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
-                            activeClassName="bg-green-900"
-                        >
-                            <i className="fas fa-user-tag mr-3"></i>
-                            {sidebarOpen && <span>Atribuir Responsável</span>}
-                        </ResponsiveNavLink>
+                            <ResponsiveNavLink
+                                href={route('escolas.index')}
+                                active={route().current('escolas.index')}
+                                className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
+                                activeClassName="bg-green-900"
+                            >
+                                <i className="fas fa-school mr-3"></i>
+                                {sidebarOpen && <span>Escolas</span>}
+                            </ResponsiveNavLink>
+
+                            <ResponsiveNavLink
+                                href={route('escolas.atribuir')}
+                                active={route().current('escolas.atribuir')}
+                                className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
+                                activeClassName="bg-green-900"
+                            >
+                                <i className="fas fa-user-tag mr-3"></i>
+                                {sidebarOpen && <span>Atribuir Responsável</span>}
+                            </ResponsiveNavLink>
+                        </>
                     </div>
 
                     {/* User dropdown */}
@@ -187,6 +226,15 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
                                 >
                                     Permissões
                                 </ResponsiveNavLink>
+
+                                <ResponsiveNavLink
+                                    href={route('users.index')}
+                                    active={route().current('users.*')}
+                                    className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-green-700"
+                                    activeClassName="bg-green-900"
+                                >
+                                    Usuários
+                                </ResponsiveNavLink>
                             </>
                         )}
 
@@ -227,7 +275,7 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
             </div>
 
             {/* Main Content */}
-            <div className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
+            <div className={`flex-1 flex flex-col ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300`}>
                 {/* Header */}
                 <header className="bg-green-800 text-white shadow">
                     <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8 flex justify-between items-center">
@@ -242,9 +290,24 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
                     </div>
                 </header>
 
-                <main className="pb-8 px-4 sm:px-6 lg:px-8">{children}</main>
+                <main className="flex-1 pb-8 px-4 sm:px-6 lg:px-8">
+                    {/* Flash Messages */}
+                    <div className="max-w-7xl mx-auto mt-4">
+                        <FlashMessage
+                            message={flashMessage}
+                            type="success"
+                            onDismiss={() => setFlashMessage(null)}
+                        />
+                        <FlashMessage
+                            message={flashError}
+                            type="error"
+                            onDismiss={() => setFlashError(null)}
+                        />
+                    </div>
+                    {children}
+                </main>
 
-                <footer className="bg-gray-800 text-white mt-8">
+                <footer className="bg-gray-800 text-white">
                     <div className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
                         <div className="flex flex-col md:flex-row justify-between items-center">
                             <div className="mb-4 md:mb-0">

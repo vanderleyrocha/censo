@@ -21,7 +21,7 @@ export default function GuestLayout({ children }) {
                                 <img className="h-10 w-auto" src="/images/logo.png" alt="Logo Governo do Acre" />
                             </Link>
                         )}
-                        <button 
+                        <button
                             onClick={() => setSidebarOpen(!sidebarOpen)}
                             className="text-green-200 hover:text-white"
                         >
@@ -35,15 +35,15 @@ export default function GuestLayout({ children }) {
 
                     <nav className="mt-4">
                         <div className="space-y-1 px-2">
-                            <Link 
-                                href={route('login')} 
+                            <Link
+                                href={route('login')}
                                 className={`flex items-center p-2 rounded hover:bg-green-700 ${route().current('login') ? 'bg-green-900' : ''}`}
                             >
                                 <i className="fas fa-sign-in-alt mr-3"></i>
                                 {sidebarOpen && <span>Login</span>}
                             </Link>
-                            <Link 
-                                href={route('register')} 
+                            <Link
+                                href={route('register')}
                                 className={`flex items-center p-2 rounded hover:bg-green-700 ${route().current('register') ? 'bg-green-900' : ''}`}
                             >
                                 <i className="fas fa-user-plus mr-3"></i>
@@ -64,10 +64,8 @@ export default function GuestLayout({ children }) {
                 {/* Main Content Area */}
                 <div className={`flex-1 ${sidebarOpen ? 'ml-64' : 'ml-20'} transition-all duration-300 flex flex-col min-h-screen`}>
                     {/* Conteúdo Central (irá crescer e empurrar o footer para baixo) */}
-                    <main className="flex-grow flex items-center justify-center p-4 sm:p-6 lg:p-8">
-                        <div className="w-full max-w-md">
-                            {children}
-                        </div>
+                    <main className="flex-grow p-4 sm:p-6 lg:p-8 flex items-center justify-center">
+                        {children}
                     </main>
 
                     {/* Footer (sempre na base) */}

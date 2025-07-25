@@ -19,10 +19,13 @@ Route::get('/', function () {
     return Inertia::render('Home');
 })->name('home');
 
-Route::middleware(['auth', 'verified', 'role:system_admin'])->group(function () {
+Route::middleware(['auth', 'verified', 'role:system-admin'])->group(function () {
     Route::resource('roles', RolePermissionController::class)->except(['show']);
     Route::post('roles/{role}/permissions', [RolePermissionController::class, 'syncPermissions']);
     Route::get('permissions', [RolePermissionController::class, 'permissionsIndex'])->name('permissions');
+
+    Route::resource('users', UserController::class);
+
 });
 
 // Rotas de Autenticação para convidados

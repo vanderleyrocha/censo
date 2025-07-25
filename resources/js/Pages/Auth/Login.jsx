@@ -20,7 +20,7 @@ export default function Login({ status, canResetPassword }) {
         <GuestLayout>
             <Head title="Login" />
 
-            <div className="bg-white rounded-lg shadow-md overflow-hidden w-full">
+            <div className="bg-white rounded-lg shadow-md overflow-hidden w-full max-w-md mx-auto">
                 <div className="bg-green-700 px-6 py-4">
                     <h2 className="text-xl font-semibold text-white">Acessar o Sistema</h2>
                 </div>

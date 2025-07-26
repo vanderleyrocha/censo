@@ -61,7 +61,9 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
     const showZonaColumn = !filters.zona;
 
     const canEditSchool = (escola) => {
-        return canEdit && userRegionalIds.includes(escola.cidade?.regional_id);
+        const adminRoles = ['system-admin', 'state-admin', 'regional-admin'];
+        const hasAdminRole = auth.user.roles?.some(role => adminRoles.includes(role));
+        return (canEdit && userRegionalIds.includes(escola.cidade?.regional_id)) || hasAdminRole;
     };
 
     return (

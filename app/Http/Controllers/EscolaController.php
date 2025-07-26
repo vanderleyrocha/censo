@@ -66,7 +66,8 @@ class EscolaController extends Controller
 
         // Verificar permissões do usuário
         $canView = $request->user()->can('view-school');
-        $canEdit = $request->user()->can('edit-regional');
+        $canEdit = $request->user()->can('edit-regional') ||
+            $request->user()->hasAnyRole(['system-admin', 'state-admin', 'regional-admin']);
 
         // Se não tiver permissão para visualizar, retornar erro
         if (!$canView) {
@@ -75,10 +76,11 @@ class EscolaController extends Controller
 
         $servidor = Servidor::with("regionais")->find($request->user()->servidor_id);
 
-        return [
-            'canEdit' => $canEdit,
-            'userRegionalIds' => $servidor ? $servidor->regionais->pluck('id') : collect(),
-        ];
+        // return [
+        //     'canEdit' => $canEdit,
+        //     'userRegionalIds' => $servidor ? $servidor->regionais->pluck('id') : collect(),
+        // ];
+
         $vars = [
             'headerTitle' => 'Atribuir Técnico Responsável pela Escola',
             'escolas' => $escolas,
@@ -115,9 +117,12 @@ class EscolaController extends Controller
         $servidor = Servidor::with("regionais")->find($request->user()->servidor_id);
         $userRegionalIds = $servidor ? $servidor->regionais->pluck('id') : collect();
 
-        foreach ($escolas as $escola) {
-            if (!$userRegionalIds->contains($escola->cidade->regional_id)) {
-                abort(403, 'Você só pode editar escolas vinculadas à sua regional.');
+        // Só verifica por regional se o usuário NÃO for system-admin ou state-admin
+        if (!$request->user()->hasAnyRole(['system-admin', 'state-admin'])) {
+            foreach ($escolas as $escola) {
+                if (!$userRegionalIds->contains($escola->cidade->regional_id)) {
+                    abort(403, 'Você só pode editar escolas vinculadas à sua regional.');
+                }
             }
         }
 

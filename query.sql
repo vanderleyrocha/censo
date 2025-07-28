@@ -11,3 +11,6 @@ LIMIT 2000
 SELECT u.name, u.email, s.matricula FROM users u JOIN servidores s ON s.id = u.servidor_id WHERE 1
 
 SELECT * FROM cidades WHERE estado_id = 1 ORDER BY regional_id, nome;
+
+-- Alterações de regional para regiao
+RENAME TABLE `u815349007_censo`.`regionais` TO `u815349007_censo`.`regioes`;

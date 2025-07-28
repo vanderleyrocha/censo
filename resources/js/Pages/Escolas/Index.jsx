@@ -1,6 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import debounce from 'lodash.debounce';
 
 export default function Index({ escolas, cidades, filters, dependencias, zonas }) {
     const [searchParams, setSearchParams] = useState({
@@ -9,34 +10,46 @@ export default function Index({ escolas, cidades, filters, dependencias, zonas }
         zona: filters.zona || ''
     });
 
-    const handleFilterChange = (e) => {
-        const { name, value } = e.target;
-        setSearchParams(prev => ({
-            ...prev,
-            [name]: value
-        }));
-    };
-
-    const applyFilters = () => {
-        router.get(route('escolas.index'), searchParams, {
+    // Debounce para evitar muitas requisições enquanto o usuário está selecionando
+    const debouncedApplyFilters = debounce((params) => {
+        router.get(route('escolas.index'), params, {
             preserveState: true,
             replace: true
         });
+    }, 300);
+
+    const handleFilterChange = (e) => {
+        const { name, value } = e.target;
+        const newParams = {
+            ...searchParams,
+            [name]: value
+        };
+        setSearchParams(newParams);
+        debouncedApplyFilters(newParams);
     };
 
     const resetFilters = () => {
-        setSearchParams({
+        const newParams = {
             cidade_id: '',
             dependencia: '',
             zona: ''
+        };
+        setSearchParams(newParams);
+        router.get(route('escolas.index'), newParams, {
+            preserveState: true,
+            replace: true
         });
-        router.get(route('escolas.index'));
     };
 
     const formatNumber = (value) => {
         if (value == 0 || value == null || value == undefined) return '-';
         return new Intl.NumberFormat('pt-BR').format(value);
     };
+
+    // Determina quais colunas mostrar com base nos filtros aplicados
+    const showCidadeColumn = !searchParams.cidade_id;
+    const showDependenciaColumn = !searchParams.dependencia;
+    const showZonaColumn = !searchParams.zona;
 
     return (
         <AuthenticatedLayout
@@ -114,12 +127,6 @@ export default function Index({ escolas, cidades, filters, dependencias, zonas }
 
                             <div className="flex space-x-2">
                                 <button
-                                    onClick={applyFilters}
-                                    className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                                >
-                                    Aplicar Filtros
-                                </button>
-                                <button
                                     onClick={resetFilters}
                                     className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-offset-2"
                                 >
@@ -129,6 +136,7 @@ export default function Index({ escolas, cidades, filters, dependencias, zonas }
                         </div>
                     </div>
 
+                    {/* Restante do código permanece igual */}
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg">
                         <div className="p-6 bg-white border-b border-gray-200">
                             <div className="overflow-x-auto">
@@ -141,15 +149,21 @@ export default function Index({ escolas, cidades, filters, dependencias, zonas }
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Nome
                                             </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Município
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Dependência
-                                            </th>
-                                            <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                Zona
-                                            </th>
+                                            {showCidadeColumn && (
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Município
+                                                </th>
+                                            )}
+                                            {showDependenciaColumn && (
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Dependência
+                                                </th>
+                                            )}
+                                            {showZonaColumn && (
+                                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                    Zona
+                                                </th>
+                                            )}
                                             <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                                 Regional
                                             </th>
@@ -170,15 +184,21 @@ export default function Index({ escolas, cidades, filters, dependencias, zonas }
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                                                     {escola.nome}
                                                 </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {escola.cidade?.nome}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {escola.dependencia}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                    {escola.zona}
-                                                </td>
+                                                {showCidadeColumn && (
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {escola.cidade?.nome}
+                                                    </td>
+                                                )}
+                                                {showDependenciaColumn && (
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {escola.dependencia}
+                                                    </td>
+                                                )}
+                                                {showZonaColumn && (
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                        {escola.zona}
+                                                    </td>
+                                                )}
                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                     {escola.cidade?.regional?.nome || 'N/A'}
                                                 </td>

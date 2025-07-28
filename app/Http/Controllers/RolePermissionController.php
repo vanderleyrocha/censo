@@ -55,7 +55,7 @@ class RolePermissionController extends Controller
             'permissions' => Permission::all()->pluck('name')
         ]);
     }
-    
+
     // Atualizar role
     public function update(Request $request, Role $role)
     {
@@ -97,6 +97,60 @@ class RolePermissionController extends Controller
         return Inertia::render('Admin/Permissions/Index', [
             'permissions' => $permissions
         ]);
+    }
+
+    public function createPermission()
+    {
+        return Inertia::render('Admin/Permissions/Create');
+    }
+
+    public function storePermission(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|unique:permissions,name',
+            'description' => 'nullable|string|max:255',
+            'guard_name' => 'nullable|string|max:255'
+        ]);
+
+        Permission::create([
+            'name' => $validated['name'],
+            'description' => $validated['description'] ?? null,
+            'guard_name' => $validated['guard_name'] ?? 'web'
+        ]);
+
+        return redirect()->route('permissions')
+            ->with('success', 'Permissão criada com sucesso!');
+    }
+
+    public function editPermission(Permission $permission)
+    {
+        return Inertia::render('Admin/Permissions/Edit', [
+            'permission' => $permission
+        ]);
+    }
+
+    public function updatePermission(Request $request, Permission $permission)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|unique:permissions,name,' . $permission->id,
+            'description' => 'nullable|string|max:255',
+            'guard_name' => 'nullable|string|max:255'
+        ]);
+
+        $permission->name = $validated['name'];
+        $permission->guard_name = $validated['guard_name'] ?? 'web';
+        $permission->description = $validated['description'] ?? null;
+        $permission->save();
+
+        return redirect()->route('permissions')
+            ->with('success', 'Permissão atualizada com sucesso!');
+    }
+
+    public function destroyPermission(Permission $permission)
+    {
+        $permission->delete();
+        return redirect()->route('permissions')
+            ->with('success', 'Permissão removida com sucesso!');
     }
 
     public function setAdminPermissions()

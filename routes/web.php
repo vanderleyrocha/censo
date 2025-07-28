@@ -7,10 +7,12 @@ use App\Http\Controllers\Auth\EmailVerificationPromptController;
 use App\Http\Controllers\Auth\NewPasswordController;
 use App\Http\Controllers\Auth\PasswordResetLinkController;
 use App\Http\Controllers\Auth\RegisteredUserController;
+use App\Http\Controllers\CidadeController;
 use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\EscolaController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RegionalController;
 use App\Http\Controllers\ServidorController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -29,6 +31,16 @@ Route::middleware(['auth', 'verified', 'role:system-admin'])->group(function () 
     Route::get('users/{user}', [RegisteredUserController::class, 'show'])->name('users.show');
     Route::get('users/{user}/edit-roles', [RegisteredUserController::class, 'editRoles'])->name('users.editRoles');
     Route::put('users/{user}/update-roles', [RegisteredUserController::class, 'updateRoles'])->name('users.updateRoles');
+
+        // Rotas para Permissões
+    Route::get('permissions', [RolePermissionController::class, 'permissionsIndex'])->name('permissions');
+    Route::get('permissions/create', [RolePermissionController::class, 'createPermission'])->name('permissions.create');
+    Route::post('permissions', [RolePermissionController::class, 'storePermission'])->name('permissions.store');
+    Route::get('permissions/{permission}/edit', [RolePermissionController::class, 'editPermission'])->name('permissions.edit');
+    Route::put('permissions/{permission}', [RolePermissionController::class, 'updatePermission'])->name('permissions.update');
+    Route::delete('permissions/{permission}', [RolePermissionController::class, 'destroyPermission'])->name('permissions.destroy');
+    
+    Route::get('/admin/permissions/set', [RolePermissionController::class, 'setAdminPermissions'])->name('admin.permissions.set');
 });
 
 // Rotas de Autenticação para convidados
@@ -50,8 +62,6 @@ Route::middleware('guest')->group(function () {
 // Rotas Protegidas (após login)
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard principal
-    Route::get('/admin/permissions/set', [RolePermissionController::class, 'setAdminPermissions'])->name('admin.permissions.set');
-
     Route::get('/dashboard', [HomeController::class, 'index'])->name('dashboard');
     Route::get('/escola/tecnico', [HomeController::class, 'escolas_por_tecnico'])->name('escolas.tecnico');
 
@@ -74,6 +84,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('confirm-password', [ConfirmablePasswordController::class, 'store']);
 
     Route::get('/servidores/{servidor}', [ServidorController::class, 'show'])->name('servidores.show');
+
+    Route::resource('regionais', RegionalController::class)->except(['show']);
+    Route::resource('cidades', CidadeController::class)->except(['show']);
 });
 
 // Rotas de verificação de email

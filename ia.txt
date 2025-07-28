@@ -17,9 +17,11 @@ Tenho a seguinte situação:
 2.5. model_has_permissions (permission_id, model_type, model_id)
 2.6. role_has_permissions (permission_id, role_id)
 
-2.7. cidades (id, nome, estado_id, regional_id, ibge)
+2.7. cidades (id, nome, estado_id, regional_id, ibge) - Model Cidade
 2.8. escolas (id, nome, endereco, bairro, zona, cidade_id, dependencia, situacao, regulamentacao, tipo_localizacao, modalidade, portaria, ano_adesao, email, atualizado, responsavel_censo, alunos_censo_2024, alunos_simaed, created_at, updated_at)
-2.9. regionais (id, nome, sigla, servidor_id, created_at, updated_at)
+2.9. regionais (id, nome, sigla, servidor_id, regiao_id, created_at, updated_at) - Model Regional
+2.10 regioes (id, nome, sigla, servidor_id, created_at, updated_at) - Model Regiao
+2.11 estados (id, nome, uf, ibge, pais, ddd, deleted_at, created_at, updated_at) - Model Estado
 
 3. Informações adicionais
 3.1. Já preenchi a tabela roles com os valores ((1,Administrador do sistema,admin,2025-07-24 09:07:03,2025-07-24 09:07:03),
@@ -32,3 +34,17 @@ Tenho a seguinte situação:
 4. Perguntas
 4.1. Todas as tabelas listadas no item 2 são realmente necessárias para trabalhar com spatie/laravel-permission
 4.2. Como devo proceder  para preencher as tabelas necessárias para liberar o acesso do usuário administrador direto no banco de dados? quais registros devem ser incluídos?
+
+Os arquivos anexos fazem parte de um Aplicação Laravel 12 + Inertia + React + spatie/laravel-permission + laravel/breezer
+Usando o layout AuthenticatedLayout.jsx e os componentes anexos, 
+preciso que voce crie o código necessário para Listar todas as 
+Regionais - regionais (id, nome, sigla, servidor_id, regiao_id, created_at, updated_at) - Model Regional
+incluido filtro por Servidor e Regiao + CRUD completo para a model Regional 
++ as relações entre Regiao e Regional, necessárias para implemetação do código e filtros
+
+Seguindo o mesmo padrão do CRUD anterior, me ajude a criar um CRUD para Cidades.
+tabela cidades (id, nome, estado_id, regional_id, ibge) - Model Cidade
+tabela estados (id, nome, uf, ibge, pais, ddd, deleted_at, created_at, updated_at) - Model Estado
+tabela regionais (id, nome, sigla, servidor_id, regiao_id, created_at, updated_at) - Model Regional
+Na pagina index que deve listar todas as cidades, deve ter filtro para estado e regional
+verifique se as models Cidade, Estado e Regional possui os relacionamentos necessários

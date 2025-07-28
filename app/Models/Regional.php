@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Regional extends Model
 {
@@ -11,11 +12,22 @@ class Regional extends Model
     protected $fillable = [
         'nome',
         'sigla',
-        'servidor_id'
+        'servidor_id',
+        'regiao_id'
     ];
 
     public function servidor()
     {
         return $this->belongsTo(Servidor::class, 'servidor_id');
+    }
+
+    public function regiao()
+    {
+        return $this->belongsTo(Regiao::class, 'regiao_id');
+    }
+
+    public function cidades(): HasMany
+    {
+        return $this->hasMany(Cidade::class);
     }
 }

@@ -6,6 +6,9 @@
         "dev": "vite"
     },
     "devDependencies": {
+        "@babel/core": "^7.28.0",
+        "@babel/plugin-transform-react-jsx": "^7.27.1",
+        "@babel/preset-react": "^7.22.15",
         "@headlessui/react": "^2.0.0",
         "@inertiajs/react": "^2.0.17",
         "@tailwindcss/aspect-ratio": "^0.4.2",
@@ -26,6 +29,8 @@
         "@inertiajs/progress": "^0.1.2",
         "chart.js": "^4.5.0",
         "chartjs-plugin-datalabels": "^2.2.0",
+        "lodash": "^4.17.21",
+        "lodash.debounce": "^4.0.8",
         "react-chartjs-2": "^5.3.0",
         "ziggy-js": "^2.5.3"
     }

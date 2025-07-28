@@ -21,7 +21,7 @@ class RegisteredUserController extends Controller
     {
         $users = User::with(['servidor', 'roles'])->get();
 
-        return Inertia::render('Users/Index', [
+        return Inertia::render('Admin/Users/Index', [
             'users' => $users->map(function ($user) {
                 return [
                     'id' => $user->id,
@@ -63,7 +63,7 @@ class RegisteredUserController extends Controller
     {
         $user->load('roles');
 
-        return Inertia::render('Users/Show', [
+        return Inertia::render('Admin/Users/Show', [
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,
@@ -79,7 +79,7 @@ class RegisteredUserController extends Controller
     {
         $roles = Role::all();
 
-        return Inertia::render('Users/EditRoles', [
+        return Inertia::render('Admin/Users/EditRoles', [
             'user' => [
                 'id' => $user->id,
                 'name' => $user->name,

@@ -16,6 +16,7 @@ return new class extends Migration
             $table->string('nome')->unique();
             $table->string('sigla')->unique();
             $table->foreignId('servidor_id')->nullable()->index();
+            $table->foreignId('regiao_id')->nullable();
             $table->timestamps();
         });
     }

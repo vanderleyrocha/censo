@@ -1,0 +1,2 @@
+npm install lodash.debounce
+npm install @babel/core @babel/plugin-transform-react-jsx --save-dev

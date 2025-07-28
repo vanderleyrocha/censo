@@ -17,6 +17,7 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
     const user = props.auth.user;
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [sidebarOpen, setSidebarOpen] = useState(true);
+    const [accessControlOpen, setAccessControlOpen] = useState(true);
 
     const { flash } = usePage().props;
     const [flashMessage, setFlashMessage] = useState(flash?.success || null);
@@ -86,6 +87,26 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
                             {sidebarOpen && <span>Início</span>}
                         </ResponsiveNavLink>
 
+                        <ResponsiveNavLink
+                            href={route('regionais.index')}
+                            active={route().current('regionais.*')}
+                            className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
+                            activeClassName="bg-green-900"
+                        >
+                            <i className="fas fa-map-marked-alt mr-3"></i>
+                            {sidebarOpen && <span>Regionais</span>}
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
+                            href={route('cidades.index')}
+                            active={route().current('cidades.*')}
+                            className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
+                            activeClassName="bg-green-900"
+                        >
+                            <i className="fas fa-city mr-3"></i>
+                            {sidebarOpen && <span>Cidades</span>}
+                        </ResponsiveNavLink>
+
                         {isAdmin && (
                             <>
                                 <div className="pt-2 mt-2 border-t border-green-700">
@@ -94,42 +115,57 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
                                     </p>
                                 </div>
 
-                                <ResponsiveNavLink
-                                    href={route('roles.index')}
-                                    active={route().current('roles.*')}
-                                    className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
-                                    activeClassName="bg-green-900"
-                                >
-                                    <i className="fas fa-user-shield mr-3"></i>
-                                    {sidebarOpen && <span>Funções</span>}
-                                </ResponsiveNavLink>
+                                <div className="group">
+                                    <div
+                                        className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200 cursor-pointer"
+                                        onClick={() => setAccessControlOpen(!accessControlOpen)}
+                                    >
+                                        <i className="fas fa-lock mr-3"></i>
+                                        {sidebarOpen && <span>Controle de acesso</span>}
+                                        <i className={`fas fa-chevron-${accessControlOpen ? 'down' : 'right'} ml-auto text-xs ${!sidebarOpen && 'hidden'}`}></i>
+                                    </div>
 
-                                <ResponsiveNavLink
-                                    href={route('permissions')}
-                                    active={route().current('permissions')}
-                                    className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
-                                    activeClassName="bg-green-900"
-                                >
-                                    <i className="fas fa-key mr-3"></i>
-                                    {sidebarOpen && <span>Permissões</span>}
-                                </ResponsiveNavLink>
+                                    {accessControlOpen && (
+                                        <div className="pl-8 space-y-1">
+                                            <ResponsiveNavLink
+                                                href={route('roles.index')}
+                                                active={route().current('roles.*')}
+                                                className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
+                                                activeClassName="bg-green-900"
+                                            >
+                                                <i className="fas fa-user-shield mr-3"></i>
+                                                {sidebarOpen && <span>Funções</span>}
+                                            </ResponsiveNavLink>
 
-                                <ResponsiveNavLink
-                                    href={route('users.index')}
-                                    active={route().current('users.*')}
-                                    className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
-                                    activeClassName="bg-green-900"
-                                >
-                                    <i className="fas fa-users mr-3"></i>
-                                    {sidebarOpen && <span>Usuários</span>}
-                                </ResponsiveNavLink>
+                                            <ResponsiveNavLink
+                                                href={route('permissions')}
+                                                active={route().current('permissions')}
+                                                className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
+                                                activeClassName="bg-green-900"
+                                            >
+                                                <i className="fas fa-key mr-3"></i>
+                                                {sidebarOpen && <span>Permissões</span>}
+                                            </ResponsiveNavLink>
+
+                                            <ResponsiveNavLink
+                                                href={route('users.index')}
+                                                active={route().current('users.*')}
+                                                className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
+                                                activeClassName="bg-green-900"
+                                            >
+                                                <i className="fas fa-users mr-3"></i>
+                                                {sidebarOpen && <span>Usuários</span>}
+                                            </ResponsiveNavLink>
+                                        </div>
+                                    )}
+                                </div>
                             </>
                         )}
 
                         <>
                             <div className="pt-2 mt-2 border-t border-green-700">
                                 <p className="px-3 py-1 text-xs text-green-200 uppercase tracking-wider">
-                                    {sidebarOpen && 'LINKS'}
+                                    {sidebarOpen && 'ESCOLAS'}
                                 </p>
                             </div>
 
@@ -140,7 +176,7 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
                                 activeClassName="bg-green-900"
                             >
                                 <i className="fas fa-school mr-3"></i>
-                                {sidebarOpen && <span>Escolas</span>}
+                                {sidebarOpen && <span>Ver lista</span>}
                             </ResponsiveNavLink>
 
                             <ResponsiveNavLink
@@ -209,32 +245,46 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
                                     </p>
                                 </div>
 
-                                <ResponsiveNavLink
-                                    href={route('roles.index')}
-                                    active={route().current('roles.*')}
-                                    className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-green-700"
-                                    activeClassName="bg-green-900"
-                                >
-                                    Funções
-                                </ResponsiveNavLink>
+                                <div className="pl-2">
+                                    <div
+                                        className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-green-700 cursor-pointer"
+                                        onClick={() => setAccessControlOpen(!accessControlOpen)}
+                                    >
+                                        <i className="fas fa-lock mr-2"></i> Controle de acesso
+                                        <i className={`fas fa-chevron-${accessControlOpen ? 'down' : 'right'} ml-2 text-xs`}></i>
+                                    </div>
 
-                                <ResponsiveNavLink
-                                    href={route('permissions')}
-                                    active={route().current('permissions')}
-                                    className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-green-700"
-                                    activeClassName="bg-green-900"
-                                >
-                                    Permissões
-                                </ResponsiveNavLink>
+                                    {accessControlOpen && (
+                                        <div className="pl-4 space-y-1">
+                                            <ResponsiveNavLink
+                                                href={route('roles.index')}
+                                                active={route().current('roles.*')}
+                                                className="block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-green-700"
+                                                activeClassName="bg-green-900"
+                                            >
+                                                <i className="fas fa-user-shield mr-2"></i> Funções
+                                            </ResponsiveNavLink>
 
-                                <ResponsiveNavLink
-                                    href={route('users.index')}
-                                    active={route().current('users.*')}
-                                    className="block px-3 py-2 rounded-md text-base font-medium text-white hover:bg-green-700"
-                                    activeClassName="bg-green-900"
-                                >
-                                    Usuários
-                                </ResponsiveNavLink>
+                                            <ResponsiveNavLink
+                                                href={route('permissions')}
+                                                active={route().current('permissions')}
+                                                className="block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-green-700"
+                                                activeClassName="bg-green-900"
+                                            >
+                                                <i className="fas fa-key mr-2"></i> Permissões
+                                            </ResponsiveNavLink>
+
+                                            <ResponsiveNavLink
+                                                href={route('users.index')}
+                                                active={route().current('users.*')}
+                                                className="block px-3 py-2 rounded-md text-sm font-medium text-white hover:bg-green-700"
+                                                activeClassName="bg-green-900"
+                                            >
+                                                <i className="fas fa-users mr-2"></i> Usuários
+                                            </ResponsiveNavLink>
+                                        </div>
+                                    )}
+                                </div>
                             </>
                         )}
 

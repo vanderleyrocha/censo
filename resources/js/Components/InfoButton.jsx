@@ -1,4 +1,4 @@
-export default function DangerButton({
+export default function InfoButton({
     className = '',
     disabled,
     size = 'md',
@@ -15,8 +15,7 @@ export default function DangerButton({
         <button
             {...props}
             className={
-                `${sizeClasses[size]} inline-flex items-center rounded-md border border-transparent bg-red-100 text-red-700 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 font-medium transition-colors ${
-                    disabled ? 'opacity-50 cursor-not-allowed' : ''
+                `${sizeClasses[size]} inline-flex items-center rounded-md border border-transparent bg-blue-100 text-blue-700 hover:bg-blue-200 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 font-medium transition-colors ${disabled ? 'opacity-50 cursor-not-allowed' : ''
                 } ${className}`
             }
             disabled={disabled}

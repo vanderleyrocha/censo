@@ -33,4 +33,9 @@ class Servidor extends Model
     {
         return $this->hasMany(Regional::class, 'servidor_id');
     }
+
+    public function regioes()
+    {
+        return $this->hasMany(Regiao::class, 'servidor_id');
+    }
 }

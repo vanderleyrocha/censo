@@ -1,24 +1,58 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, router } from '@inertiajs/react';
-import { useState } from 'react';
+import { Head, router } from '@inertiajs/react';
+import { useState, useCallback } from 'react';
+import { debounce } from 'lodash';
 
-export default function Atribuir({ escolas, filters, cidades, dependencias, zonas, tecnicos, auth, headerTitle, canEdit, userRegionalIds }) {
+export default function Atribuir({ 
+    escolas, 
+    filters = {}, 
+    cidades, 
+    dependencias, 
+    zonas, 
+    tecnicos, 
+    auth, 
+    headerTitle, 
+    canEdit, 
+    userRegionalIds, 
+    userRegiaoIds, 
+    userRoles 
+}) {
     const [selectedSchools, setSelectedSchools] = useState([]);
     const [servidorId, setServidorId] = useState('');
+    const [localFilters, setLocalFilters] = useState({
+        cidade_id: filters.cidade_id || '',
+        dependencia: filters.dependencia || '',
+        zona: filters.zona || ''
+    });
 
-    const handleFilter = (e) => {
-        e.preventDefault();
-        router.get(route('escolas.atribuir'), filters, {
-            preserveState: true,
-            replace: true,
-        });
+    // Função debounced para aplicar filtros
+    const applyFilters = useCallback(
+        debounce((filters) => {
+            router.get(route('escolas.atribuir'), filters, {
+                preserveState: true,
+                replace: true,
+            });
+        }, 300),
+        []
+    );
+
+    const handleFilterChange = (name, value) => {
+        const newFilters = {
+            ...localFilters,
+            [name]: value
+        };
+        setLocalFilters(newFilters);
+        applyFilters(newFilters);
     };
 
     const handleResetFilters = () => {
-        router.get(route('escolas.atribuir'), {}, {
-            preserveState: true,
-            replace: true,
-        });
+        const newFilters = {
+            cidade_id: '',
+            dependencia: '',
+            zona: ''
+        };
+        setLocalFilters(newFilters);
+        applyFilters(newFilters);
     };
 
     const toggleSchoolSelection = (id) => {
@@ -34,15 +68,38 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
     const selectAllSchools = () => {
         if (!canEdit) return;
         
-        // Get all schools that belong to any of the user's regionals
-        const escolasDasRegionais = escolas.filter(escola => 
-            userRegionalIds.includes(escola.cidade?.regional_id)
-        );
+        if (userRoles.includes('system-admin') || userRoles.includes('state-admin')) {
+            if (selectedSchools.length === escolas.length) {
+                setSelectedSchools([]);
+            } else {
+                setSelectedSchools(escolas.map(escola => escola.id));
+            }
+            return;
+        }
         
-        if (selectedSchools.length === escolasDasRegionais.length) {
-            setSelectedSchools([]);
-        } else {
-            setSelectedSchools(escolasDasRegionais.map(escola => escola.id));
+        if (userRoles.includes('regiao-admin')) {
+            const escolasDaRegiao = escolas.filter(escola => 
+                escola.cidade?.regional?.regiao_id && userRegiaoIds.includes(escola.cidade.regional.regiao_id)
+            );
+            
+            if (selectedSchools.length === escolasDaRegiao.length) {
+                setSelectedSchools([]);
+            } else {
+                setSelectedSchools(escolasDaRegiao.map(escola => escola.id));
+            }
+            return;
+        }
+        
+        if (userRoles.includes('regional-admin')) {
+            const escolasDaRegional = escolas.filter(escola => 
+                escola.cidade?.regional_id && userRegionalIds.includes(escola.cidade.regional_id)
+            );
+            
+            if (selectedSchools.length === escolasDaRegional.length) {
+                setSelectedSchools([]);
+            } else {
+                setSelectedSchools(escolasDaRegional.map(escola => escola.id));
+            }
         }
     };
 
@@ -56,14 +113,46 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
         });
     };
 
-    const showCidadeColumn = !filters.cidade_id;
-    const showDependenciaColumn = !filters.dependencia;
-    const showZonaColumn = !filters.zona;
+    const showCidadeColumn = !localFilters.cidade_id;
+    const showDependenciaColumn = !localFilters.dependencia;
+    const showZonaColumn = !localFilters.zona;
 
     const canEditSchool = (escola) => {
-        const adminRoles = ['system-admin', 'state-admin', 'regional-admin'];
-        const hasAdminRole = auth.user.roles?.some(role => adminRoles.includes(role));
-        return (canEdit && userRegionalIds.includes(escola.cidade?.regional_id)) || hasAdminRole;
+        if (userRoles.includes('system-admin') || userRoles.includes('state-admin')) {
+            return true;
+        }
+        
+        if (userRoles.includes('regiao-admin') && escola.cidade?.regional?.regiao_id) {
+            return userRegiaoIds.includes(escola.cidade.regional.regiao_id);
+        }
+        
+        if (userRoles.includes('regional-admin') && escola.cidade?.regional_id) {
+            return userRegionalIds.includes(escola.cidade.regional_id);
+        }
+        
+        return false;
+    };
+
+    const allSchoolsInViewSelected = () => {
+        if (userRoles.includes('system-admin') || userRoles.includes('state-admin')) {
+            return escolas.length > 0 && selectedSchools.length === escolas.length;
+        }
+        
+        if (userRoles.includes('regiao-admin')) {
+            const escolasDaRegiao = escolas.filter(escola => 
+                escola.cidade?.regional?.regiao_id && userRegiaoIds.includes(escola.cidade.regional.regiao_id)
+            );
+            return escolasDaRegiao.length > 0 && selectedSchools.length === escolasDaRegiao.length;
+        }
+        
+        if (userRoles.includes('regional-admin')) {
+            const escolasDaRegional = escolas.filter(escola => 
+                escola.cidade?.regional_id && userRegionalIds.includes(escola.cidade.regional_id)
+            );
+            return escolasDaRegional.length > 0 && selectedSchools.length === escolasDaRegional.length;
+        }
+        
+        return false;
     };
 
     return (
@@ -73,7 +162,7 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
             <div className="py-12">
                 <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6 mb-6">
-                        <form onSubmit={handleFilter} className="space-y-4">
+                        <div className="space-y-4">
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                 <div>
                                     <label htmlFor="cidade_id" className="block text-sm font-medium text-gray-700">
@@ -82,8 +171,8 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                     <select
                                         id="cidade_id"
                                         name="cidade_id"
-                                        value={filters.cidade_id || ''}
-                                        onChange={(e) => router.get(route('escolas.atribuir'), { ...filters, cidade_id: e.target.value }, { preserveState: true })}
+                                        value={localFilters.cidade_id}
+                                        onChange={(e) => handleFilterChange('cidade_id', e.target.value)}
                                         className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
                                     >
                                         <option value="">Todas as cidades</option>
@@ -102,8 +191,8 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                     <select
                                         id="dependencia"
                                         name="dependencia"
-                                        value={filters.dependencia || ''}
-                                        onChange={(e) => router.get(route('escolas.atribuir'), { ...filters, dependencia: e.target.value }, { preserveState: true })}
+                                        value={localFilters.dependencia}
+                                        onChange={(e) => handleFilterChange('dependencia', e.target.value)}
                                         className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
                                     >
                                         <option value="">Todas as dependências</option>
@@ -122,8 +211,8 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                     <select
                                         id="zona"
                                         name="zona"
-                                        value={filters.zona || ''}
-                                        onChange={(e) => router.get(route('escolas.atribuir'), { ...filters, zona: e.target.value }, { preserveState: true })}
+                                        value={localFilters.zona}
+                                        onChange={(e) => handleFilterChange('zona', e.target.value)}
                                         className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-green-500 focus:border-green-500 sm:text-sm rounded-md"
                                     >
                                         <option value="">Todas as zonas</option>
@@ -144,14 +233,8 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                 >
                                     Limpar Filtros
                                 </button>
-                                <button
-                                    type="submit"
-                                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                                >
-                                    Filtrar
-                                </button>
                             </div>
-                        </form>
+                        </div>
                     </div>
 
                     <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-6">
@@ -187,7 +270,7 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                                 {canEdit && (
                                                     <input
                                                         type="checkbox"
-                                                        checked={selectedSchools.length === escolas.filter(e => userRegionalIds.includes(e.cidade?.regional_id)).length && escolas.length > 0}
+                                                        checked={allSchoolsInViewSelected()}
                                                         onChange={selectAllSchools}
                                                         className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
                                                     />
@@ -219,11 +302,10 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                     <tbody className="bg-white divide-y divide-gray-200">
                                         {escolas.length > 0 ? (
                                             escolas.map((escola) => {
-                                                const isFromUserRegional = userRegionalIds.includes(escola.cidade?.regional_id);
                                                 const canEditThisSchool = canEditSchool(escola);
                                                 const rowClass = selectedSchools.includes(escola.id) 
                                                     ? 'bg-green-50' 
-                                                    : !isFromUserRegional 
+                                                    : !canEditThisSchool 
                                                         ? 'bg-gray-50' 
                                                         : '';
 
@@ -246,8 +328,8 @@ export default function Atribuir({ escolas, filters, cidades, dependencias, zona
                                                         {showCidadeColumn && (
                                                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                                 {escola.cidade?.nome}
-                                                                {!isFromUserRegional && (
-                                                                    <span className="ml-2 text-xs text-gray-400">(outra regional)</span>
+                                                                {!canEditThisSchool && (
+                                                                    <span className="ml-2 text-xs text-gray-400">(fora da sua área)</span>
                                                                 )}
                                                             </td>
                                                         )}

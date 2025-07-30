@@ -54,7 +54,7 @@ class EscolaController extends Controller
         $cidades = Cidade::where("estado_id", 1)->orderBy('nome')->get();
         $dependencias = Escola::select('dependencia')->distinct()->pluck('dependencia');
         $zonas = Escola::select('zona')->distinct()->pluck('zona');
-        $tecnicos = Servidor::whereIn('funcao', ['TÉCNICO', 'ASSESSOR TÉCNICO'])->orderBy('nome')->get(['id', 'nome']);
+        $tecnicos = Servidor::whereIn('funcao', ['TÉCNICO', 'ASSESSOR TÉCNICO', 'Coordenador Municipal do Censo Escolar'])->orderBy('nome')->get(['id', 'nome']);
 
         $escolas = Escola::query()
             ->with(['cidade.regional', 'responsavel'])
@@ -65,23 +65,18 @@ class EscolaController extends Controller
             ->get();
 
         // Verificar permissões do usuário
-        $canView = $request->user()->can('view-school');
+        $canView = $request->user()->can('view-school') ||
+            $request->user()->hasAnyRole(['system-admin', 'state-admin', 'regiao-admin', 'regional-admin']);
         $canEdit = $request->user()->can('edit-regional') ||
-            $request->user()->hasAnyRole(['system-admin', 'state-admin', 'regional-admin']);
+            $request->user()->hasAnyRole(['system-admin', 'state-admin', 'regiao-admin', 'regional-admin']);
 
-        // Se não tiver permissão para visualizar, retornar erro
         if (!$canView) {
             abort(403, 'Você não tem permissão para visualizar escolas.');
         }
 
-        $servidor = Servidor::with("regionais")->find($request->user()->servidor_id);
+        $servidor = Servidor::with(["regioes", "regionais"])->find($request->user()->servidor_id);
 
-        // return [
-        //     'canEdit' => $canEdit,
-        //     'userRegionalIds' => $servidor ? $servidor->regionais->pluck('id') : collect(),
-        // ];
-
-        $vars = [
+        return Inertia::render('Escolas/Atribuir', [
             'headerTitle' => 'Atribuir Técnico Responsável pela Escola',
             'escolas' => $escolas,
             'filters' => $request->only(['cidade_id', 'dependencia', 'zona']),
@@ -90,9 +85,10 @@ class EscolaController extends Controller
             'zonas' => $zonas,
             'tecnicos' => $tecnicos,
             'canEdit' => $canEdit,
+            'userRegiaoIds' => $servidor ? $servidor->regioes->pluck('id') : collect(),
             'userRegionalIds' => $servidor ? $servidor->regionais->pluck('id') : collect(),
-        ];
-        return Inertia::render('Escolas/Atribuir', $vars);
+            'userRoles' => $request->user()->roles->pluck('name'),
+        ]);
     }
 
     public function atualizarResponsavel(Request $request)
@@ -103,31 +99,52 @@ class EscolaController extends Controller
             'servidor_id' => 'required|exists:servidores,id',
         ]);
 
+        $user = $request->user();
+
         // Verificar se o usuário tem permissão para editar
-        if (!$request->user()->can('edit-regional')) {
+        if (!$user->can('edit-regional') && !$user->hasAnyRole(['system-admin', 'state-admin', 'regiao-admin', 'regional-admin'])) {
             abort(403, 'Você não tem permissão para editar vínculos de escolas.');
         }
 
-        // Obter as escolas selecionadas com suas cidades e regionais
+        // Se for system-admin ou state-admin, pode editar qualquer escola
+        if ($user->hasAnyRole(['system-admin', 'state-admin'])) {
+            Escola::whereIn('id', $request->escolas_ids)
+                ->update(['responsavel_censo' => $request->servidor_id]);
+                
+            return redirect()->back()->with('success', 'Responsável atualizado com sucesso!');
+        }
+
+        // Para regiao-admin e regional-admin, verificar se as escolas pertencem às suas regionais/regiões
         $escolas = Escola::with('cidade.regional')
             ->whereIn('id', $request->escolas_ids)
             ->get();
 
-        // Verificar se o usuário é responsável pela regional de todas as escolas selecionadas
-        $servidor = Servidor::with("regionais")->find($request->user()->servidor_id);
+        $servidor = Servidor::with(["regioes", "regionais"])->find($user->servidor_id);
+        $userRegiaoIds = $servidor ? $servidor->regioes->pluck('id') : collect();
         $userRegionalIds = $servidor ? $servidor->regionais->pluck('id') : collect();
 
-        // Só verifica por regional se o usuário NÃO for system-admin ou state-admin
-        if (!$request->user()->hasAnyRole(['system-admin', 'state-admin'])) {
-            foreach ($escolas as $escola) {
-                if (!$userRegionalIds->contains($escola->cidade->regional_id)) {
-                    abort(403, 'Você só pode editar escolas vinculadas à sua regional.');
+        $validSchoolIds = [];
+        foreach ($escolas as $escola) {
+            if ($user->hasRole('regiao-admin')) {
+                // Verifica se a escola pertence a uma regional da regiao do usuário
+                if ($userRegiaoIds->contains($escola->cidade->regional->regiao_id)) {
+                    $validSchoolIds[] = $escola->id;
+                }
+            } elseif ($user->hasRole('regional-admin')) {
+                // Verifica se a escola pertence diretamente à regional do usuário
+                if ($userRegionalIds->contains($escola->cidade->regional_id)) {
+                    $validSchoolIds[] = $escola->id;
                 }
             }
         }
 
+        // Verificar se todas as escolas selecionadas são válidas
+        if (count($validSchoolIds) !== count($request->escolas_ids)) {
+            abort(403, 'Você só pode editar escolas vinculadas à sua regional/região.');
+        }
+
         // Atualizar os responsáveis
-        Escola::whereIn('id', $request->escolas_ids)
+        Escola::whereIn('id', $validSchoolIds)
             ->update(['responsavel_censo' => $request->servidor_id]);
 
         return redirect()->back()->with('success', 'Responsável atualizado com sucesso!');

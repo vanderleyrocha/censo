@@ -2,10 +2,14 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Regiao extends Model
 {
+    use HasFactory;
+
     protected $table = 'regioes';
 
     protected $fillable = [
@@ -14,8 +18,8 @@ class Regiao extends Model
         'servidor_id'
     ];
 
-    public function servidor()
+    public function servidor(): BelongsTo
     {
-        return $this->belongsTo(Servidor::class, 'servidor_id');
+        return $this->belongsTo(Servidor::class);
     }
 }

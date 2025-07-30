@@ -12,6 +12,7 @@ use App\Http\Controllers\RolePermissionController;
 use App\Http\Controllers\EscolaController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\RegiaoController;
 use App\Http\Controllers\RegionalController;
 use App\Http\Controllers\ServidorController;
 use Illuminate\Support\Facades\Route;
@@ -85,7 +86,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/servidores/{servidor}', [ServidorController::class, 'show'])->name('servidores.show');
 
-    Route::resource('regionais', RegionalController::class)->except(['show']);
+    Route::resource('regioes', RegiaoController::class)->except(['show'])->parameters(['regioes' => 'regiao']);
+    Route::resource('regionais', RegionalController::class)->except(['show'])->parameters(['regionais' => 'regional']);
     Route::resource('cidades', CidadeController::class)->except(['show']);
 });
 

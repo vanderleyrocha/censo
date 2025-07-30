@@ -88,6 +88,16 @@ export default function AuthenticatedLayout({ header, children, headerTitle }) {
                         </ResponsiveNavLink>
 
                         <ResponsiveNavLink
+                            href={route('regioes.index')}
+                            active={route().current('regioes.*')}
+                            className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"
+                            activeClassName="bg-green-900"
+                        >
+                            <i className="fas fa-map-marked-alt mr-3"></i>
+                            {sidebarOpen && <span>Regiões</span>}
+                        </ResponsiveNavLink>
+
+                        <ResponsiveNavLink
                             href={route('regionais.index')}
                             active={route().current('regionais.*')}
                             className="flex items-center p-2 rounded hover:bg-green-700 text-white transition-colors duration-200"

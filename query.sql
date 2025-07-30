@@ -12,5 +12,8 @@ SELECT u.name, u.email, s.matricula FROM users u JOIN servidores s ON s.id = u.s
 
 SELECT * FROM cidades WHERE estado_id = 1 ORDER BY regional_id, nome;
 
--- Alterações de regional para regiao
-RENAME TABLE `u815349007_censo`.`regionais` TO `u815349007_censo`.`regioes`;
+SELECT id, matricula, nome, funcao, usuario, email
+FROM servidores
+WHERE 1
+
+SELECT id, name, email, password, servidor_id FROM users WHERE 1

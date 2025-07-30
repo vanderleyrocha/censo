@@ -25,7 +25,7 @@ class CidadeController extends Controller
             $query->where('regional_id', $request->regional_id);
         }
 
-        $cidades = $query->paginate(10)->withQueryString();
+        $cidades = $query->paginate(25)->withQueryString();
 
         return Inertia::render('Cidades/Index', [
             'cidades' => $cidades,

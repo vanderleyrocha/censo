@@ -48,3 +48,11 @@ tabela estados (id, nome, uf, ibge, pais, ddd, deleted_at, created_at, updated_a
 tabela regionais (id, nome, sigla, servidor_id, regiao_id, created_at, updated_at) - Model Regional
 Na pagina index que deve listar todas as cidades, deve ter filtro para estado e regional
 verifique se as models Cidade, Estado e Regional possui os relacionamentos necessários
+
+Os arquivos anexos fazem parte de um Aplicação Laravel 12 + Inertia + React + spatie/laravel-permission + laravel/breezer.
+A autorização para alterar o técnico responsável de uma escola segue a seguinte lógica:
+1.	Se o usuário tem uma das funções (role): system-admin ou state-admin ele pode alterar o técnico responsável por qualquer escola
+2.	Se o usuário tem a função (role) regiao-admin ele pode alterar o técnico responsável por qualquer escola que pertença a uma cidade (escolas.cidade_id) vinculada a uma regional (cidades.regional_id) que seja vinculada à região (regionais.regiao_id) a qual o usuário esteja vinculado (regioes.servidor_id);
+3.	Se o usuário tem a função (role) regional-admin ele pode alterar o técnico responsável por qualquer escola que pertença a uma cidade (escolas.cidade_id) vinculada à regional (cidades.regional_id)  a qual o usuário esteja vinculado (regionais.servidor_id);
+Com base no descrito acima e usando as informações do banco de dados anexo onde mostra as relações entre as tabelas, ajuste o código do arquivo EscolaController.php e Atribuir.jsx para que reflitam a lógica definida;
+

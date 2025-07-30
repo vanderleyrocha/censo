@@ -6,41 +6,38 @@ import InputLabel from '@/Components/InputLabel';
 import SelectInput from '@/Components/SelectInput';
 import { useState, useEffect } from 'react';
 
-export default function Index({ regionais, servidores, regioes, filters }) {
+export default function Index({ regioes, servidores, filters }) {
     const [servidorFilter, setServidorFilter] = useState(filters.servidor_id || '');
-    const [regiaoFilter, setRegiaoFilter] = useState(filters.regiao_id || '');
 
     // Aplica filtros automaticamente quando mudam
     useEffect(() => {
         const timer = setTimeout(() => {
-            router.get(route('regionais.index'), {
-                servidor_id: servidorFilter,
-                regiao_id: regiaoFilter
+            router.get(route('regioes.index'), {
+                servidor_id: servidorFilter
             }, {
                 preserveState: true,
                 replace: true
             });
-        }, 500); // Debounce de 500ms
+        }, 500);
 
         return () => clearTimeout(timer);
-    }, [servidorFilter, regiaoFilter]);
+    }, [servidorFilter]);
 
     const clearFilters = () => {
         setServidorFilter('');
-        setRegiaoFilter('');
     };
 
     return (
-        <AuthenticatedLayout headerTitle="Lista de Regionais">
-            <Head title="Regionais" />
+        <AuthenticatedLayout headerTitle="Lista de Regiões">
+            <Head title="Regiões" />
             
             <TableWrapper
-                title="Regionais"
-                description="Lista de todas as regionais cadastradas"
+                title="Regiões"
+                description="Lista de todas as regiões cadastradas"
                 actionButton={
-                    <Link href={route('regionais.create')}>
+                    <Link href={route('regioes.create')}>
                         <Button color="primary" size="sm">
-                            <i className="fas fa-plus mr-2"></i> Nova Regional
+                            <i className="fas fa-plus mr-2"></i> Nova Região
                         </Button>
                     </Link>
                 }
@@ -62,22 +59,6 @@ export default function Index({ regionais, servidores, regioes, filters }) {
                         </SelectInput>
                     </div>
 
-                    <div>
-                        <InputLabel value="Filtrar por Região" />
-                        <SelectInput
-                            value={regiaoFilter}
-                            onChange={(e) => setRegiaoFilter(e.target.value)}
-                            className="w-full"
-                        >
-                            <option value="">Todas</option>
-                            {regioes.map((regiao) => (
-                                <option key={regiao.id} value={regiao.id}>
-                                    {regiao.nome}
-                                </option>
-                            ))}
-                        </SelectInput>
-                    </div>
-
                     <div className="flex items-end">
                         <Button color="secondary" onClick={clearFilters} size="sm" className="h-10">
                             <i className="fas fa-times mr-1"></i> Limpar Filtros
@@ -85,31 +66,28 @@ export default function Index({ regionais, servidores, regioes, filters }) {
                     </div>
                 </div>
 
-                <Table headers={['Nome', 'Sigla', 'Servidor', 'Região', 'Ações']} isEmpty={regionais.data.length === 0}>
-                    {regionais.data.map((regional) => (
-                        <tr key={regional.id}>
+                <Table headers={['Nome', 'Sigla', 'Servidor', 'Ações']} isEmpty={regioes.data.length === 0}>
+                    {regioes.data.map((regiao) => (
+                        <tr key={regiao.id}>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                {regional.nome}
+                                {regiao.nome}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {regional.sigla}
+                                {regiao.sigla}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {regional.servidor?.nome || '-'}
-                            </td>
-                            <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                {regional.regiao?.nome || '-'}
+                                {regiao.servidor?.nome || '-'}
                             </td>
                             <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                 <div className="flex flex-wrap gap-2">
-                                    <Link href={route('regionais.edit', regional.id)}>
+                                    <Link href={route('regioes.edit', regiao.id)}>
                                         <Button color="edit" size="sm">
                                             <i className="fas fa-edit mr-1"></i> Editar
                                         </Button>
                                     </Link>
                                     <Link
                                         method="delete"
-                                        href={route('regionais.destroy', regional.id)}
+                                        href={route('regioes.destroy', regiao.id)}
                                         as="button"
                                     >
                                         <Button color="danger" size="sm">
@@ -122,10 +100,10 @@ export default function Index({ regionais, servidores, regioes, filters }) {
                     ))}
                 </Table>
 
-                {regionais.links.length > 3 && (
+                {regioes.links.length > 3 && (
                     <div className="mt-4">
                         <nav className="flex justify-center">
-                            {regionais.links.map((link, index) => (
+                            {regioes.links.map((link, index) => (
                                 <Link
                                     key={index}
                                     href={link.url || '#'}

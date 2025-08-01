@@ -28,6 +28,7 @@ class AlunoCensoUpdate extends Command
 
         if ($registro_unico) {
             $this->info('Iniciando processo de atualização de registros únicos...');
+            Aluno::query()->update(['registro_unico' => 0]); // Reset all registro_unico to 0
             // Step 1: Update records with unique cod_inep_aluno
             $this->updateUniqueRecords();
 
@@ -76,8 +77,9 @@ class AlunoCensoUpdate extends Command
     protected function processDuplicates()
     {
         $this->info('Processando registros duplicados...');
+        $startTime = microtime(true);
 
-        // Get all cod_inep_aluno that appear more than once
+        // 1. Identificar todos os códigos INEP duplicados
         $duplicateCodes = Aluno::query()
             ->select('cod_inep_aluno')
             ->groupBy('cod_inep_aluno')
@@ -87,43 +89,50 @@ class AlunoCensoUpdate extends Command
         $totalDuplicates = $duplicateCodes->count();
         $this->line("Encontrados {$totalDuplicates} códigos INEP com registros duplicados.");
 
+        // 2. Processar em lotes para melhor performance
+        $batchSize = 500;
+        $processed = 0;
+        $updatedCount = 0;
+        $totalRecords = 0;
+
         $bar = $this->output->createProgressBar($totalDuplicates);
+        $bar->setFormat("%current%/%max% [%bar%] %percent:3s%% %elapsed:6s%/%estimated:-6s% %memory:6s%\nProcessando: %message%");
+        $bar->setMessage('Iniciando...');
         $bar->start();
 
-        $updatedCount = 0;
-        $totalRecordsUpdated = 0;
+        $duplicateCodes->chunk($batchSize)->each(function ($batch) use ($bar, &$processed, &$updatedCount, &$totalRecords, &$totalDuplicates) {
+            // 3. Obter todos os IDs dos registros que devem ser marcados como únicos
+            $recordsToUpdate = Aluno::query()
+                ->whereIn('cod_inep_aluno', $batch)
+                ->selectRaw('id')
+                ->whereRaw('id = (SELECT id FROM alunos WHERE cod_inep_aluno = alunos.cod_inep_aluno ORDER BY prioridade DESC, id DESC LIMIT 1)')
+                ->pluck('id')
+                ->toArray();
 
-        // Process each duplicate code
-        foreach ($duplicateCodes as $code) {
-            // Get all records with this code ordered by estrutura_curricular and tipo_atendimento
-            $records = Aluno::where('cod_inep_aluno', $code)
-                ->orderBy('estrutura_curricular')
-                ->orderBy('tipo_atendimento')
-                ->get();
+            // 4. Atualização em massa
+            if (!empty($recordsToUpdate)) {
+                $count = Aluno::whereIn('id', $recordsToUpdate)
+                    ->update(['registro_unico' => 1]);
 
-            if ($records->count() > 1) {
-                // Update the first record
-                $firstRecord = $records->first();
-                $firstRecord->registro_unico = 1;
-                $firstRecord->save();
-
-                $updatedCount++;
-                $totalRecordsUpdated++;
+                $updatedCount += $count;
+                $totalRecords += $batch->count();
             }
 
-            $bar->advance();
-        }
+            $processed += $batch->count();
+            $bar->setMessage("Processados {$processed}/{$totalDuplicates} códigos | Atualizados {$updatedCount} registros");
+            $bar->advance($batch->count());
+        });
 
         $bar->finish();
         $this->newLine();
 
-        $this->info("Processados {$totalDuplicates} códigos INEP com duplicatas.");
+        $executionTime = round(microtime(true) - $startTime, 2);
+        $this->info("Processados {$totalDuplicates} códigos INEP com duplicatas em {$executionTime} segundos.");
         $this->info("Atualizados {$updatedCount} registros (primeiro de cada duplicata).");
 
-        // Generate report
+        // Gerar relatório
         $this->generateReport($totalDuplicates, $updatedCount);
     }
-
     protected function verificaCpfValido()
     {
         $ids_cpf_valido = [];

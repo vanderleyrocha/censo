@@ -11,7 +11,9 @@ class Cidade extends Model
         'nome',
         'estado_id',
         'regional_id',
-        'ibge'
+        'ibge',
+        'created_at',
+        'updated_at'
     ];
 
     public function estado(): BelongsTo

@@ -56,3 +56,28 @@ A autorização para alterar o técnico responsável de uma escola segue a segui
 3.	Se o usuário tem a função (role) regional-admin ele pode alterar o técnico responsável por qualquer escola que pertença a uma cidade (escolas.cidade_id) vinculada à regional (cidades.regional_id)  a qual o usuário esteja vinculado (regionais.servidor_id);
 Com base no descrito acima e usando as informações do banco de dados anexo onde mostra as relações entre as tabelas, ajuste o código do arquivo EscolaController.php e Atribuir.jsx para que reflitam a lógica definida;
 
+
+Criar script (Comando Artisan) Laravel 12 + Inertia + React + spatie/laravel-permission + laravel/breezer para
+verificar se existe mais de um registro na tabela alunos (Model Aluno) em que os campos 
+cod_inep_aluno, cpf, nome, cod_inep_escola,  modalidade, etapa, nome_turma, tipo_mediacao, tipo_atendimento
+tenham o mesmo valor. em caso afirmativo, apagar todos os registros menos um que tenha o maior id
+acrescente ao script uma barra de progresso com informações detalhadas para o usuário
+Use a técnica de processamento em lote para minimizar o tempo de processamento
+
+Criar script (Comando Artisan) Laravel 12 + Inertia + React + spatie/laravel-permission + laravel/breezer para
+atualizar os campos alunos_censo_2024 e alunos_simaed da tabelas escolas (model Escola)
+
+o campo alunos_censo_2024 deve ser atualizado contando todos os registros da tabela alunos (Model Aluno) que:
+ano_censo = 2024
+registro_unico = 1
+cod_inep_escola = escolas.id
+
+o campo alunos_simaed deve ser atualizado contando todos os registros da tabela alunos_simaed (Model AlunoSimaed) que:
+censo = escolas.id
+situacao_matricula = 'Ativa'
+
+O script deve usar atualização em massa e as melhores práticas possíveis aproveitando ao máximo os recursos do Laravel 12 e PHP 8 para reduzir ao máximo o tempo de processamento
+O script deve apresentar uma barra de progresso (ProgressBar) usando o componente ProgressBar do Symfony com o máximo de informações possíveis para manter o usuário informado sobre o andamento do processamento
+Para a barra de progresso, pode ser usado o exemplo em https://symfony.com/doc/current/components/console/helpers/progressbar.html
+
+12030686, 12021466, 12031496, 12031836, 12032727, 12031453, 12032735, 12029599, 12029580, 12033383, 12033634, 12012904, 12031518, 12010863, 12028100, 12028096, 12010960, 12028843, 12032271, 12026751, 12032603

@@ -9,11 +9,24 @@ class Escola extends Model
 {
     protected $fillable = [
         'nome',
-        'dependencia',
+        'endereco',
+        'bairro',
         'zona',
-        'alunos_simaed',
+        'cidade_id',
+        'dependencia',
+        'situacao',
+        'regulamentacao',
+        'tipo_localizacao',
+        'modalidade',
+        'portaria',
+        'ano_adesao',
+        'email',
+        'atualizado',
+        'responsavel_censo',
         'alunos_censo_2024',
-        'cidade_id'
+        'alunos_simaed',
+        'created_at',
+        'updated_at'
     ];
 
     public function cidade(): BelongsTo
@@ -24,5 +37,15 @@ class Escola extends Model
     public function responsavel(): BelongsTo
     {
         return $this->belongsTo(Servidor::class, 'responsavel_censo', 'id');
+    }
+
+    public function alunos()
+    {
+        return $this->hasMany(Aluno::class, 'cod_inep_escola', 'id');
+    }
+
+    public function alunosSimaed()
+    {
+        return $this->hasMany(AlunoSimaed::class, 'censo', 'id');
     }
 }

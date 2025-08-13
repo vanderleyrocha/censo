@@ -7,10 +7,14 @@ class Format {
 
 	public static function digitOnly($string) 
 	{
-		if (is_null($string)) {
+		if (empty($string)) {
 			return null;
 		}
-		return preg_replace("/[^0-9]/", "", $string);
+		$string = preg_replace("/[^0-9]/", "", $string);
+		if (empty($string)) {
+			return null;
+		}
+		return $string;
 	}
 
 

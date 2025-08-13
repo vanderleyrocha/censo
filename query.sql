@@ -48,3 +48,8 @@ SELECT cod_inep_aluno, registro_unico, nome, cod_inep_escola, municipio, escola,
 FROM alunos 
 WHERE cod_inep_aluno = 123178683088
 
+SELECT ESTUDANTE_NOME, status, situacao_escola, situacao_mec
+FROM frequencia_pendente_mec
+WHERE CO_ENTIDADE = 12007617 AND MES_REFERENCIA = 3 AND NOT turma is null AND situacao_escola = 'Ativa'
+ORDER by situacao_escola, ESTUDANTE_NOME 
+

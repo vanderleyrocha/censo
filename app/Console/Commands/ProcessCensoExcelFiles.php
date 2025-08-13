@@ -4,7 +4,6 @@ namespace App\Console\Commands;
 
 use App\Helpers\Format;
 use App\Models\Aluno;
-use App\Models\Cidade;
 use App\Models\Escola;
 use \PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 use Illuminate\Console\Command;

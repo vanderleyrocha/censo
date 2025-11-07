@@ -23,6 +23,32 @@ Route::get('/', function () {
     return Inertia::render('Home');
 })->name('home');
 
+Route::get('/api/versions', function () {
+    $composerJson = json_decode(file_get_contents(base_path('composer.json')), true);
+    $composerLock = json_decode(file_get_contents(base_path('composer.lock')), true);
+
+    $getPackageVersion = function ($packageName) use ($composerLock) {
+        foreach ($composerLock['packages'] as $package) {
+            if ($package['name'] === $packageName) {
+                return $package['version'];
+            }
+        }
+        return 'Não encontrado';
+    };
+
+    return response()->json([
+        'php' => PHP_VERSION,
+        'laravel' => Illuminate\Foundation\Application::VERSION,
+        'phpspreadsheet' => $getPackageVersion('phpoffice/phpspreadsheet'),
+        'laravel_permission' => $getPackageVersion('spatie/laravel-permission'),
+        'inertia' => $getPackageVersion('inertiajs/inertia-laravel'),
+        'breeze' => $getPackageVersion('laravel/breeze'),
+        'react' => '18.x',
+        'environment' => app()->environment(),
+        'timestamp' => \Carbon\Carbon::now()->format('d/m/Y H:i:s'),
+    ]);
+});
+
 Route::middleware(['auth', 'verified', 'role:system-admin'])->group(function () {
     Route::resource('roles', RolePermissionController::class)->except(['show']);
     Route::post('roles/{role}/permissions', [RolePermissionController::class, 'syncPermissions']);
@@ -33,14 +59,14 @@ Route::middleware(['auth', 'verified', 'role:system-admin'])->group(function () 
     Route::get('users/{user}/edit-roles', [RegisteredUserController::class, 'editRoles'])->name('users.editRoles');
     Route::put('users/{user}/update-roles', [RegisteredUserController::class, 'updateRoles'])->name('users.updateRoles');
 
-        // Rotas para Permissões
+    // Rotas para Permissões
     Route::get('permissions', [RolePermissionController::class, 'permissionsIndex'])->name('permissions');
     Route::get('permissions/create', [RolePermissionController::class, 'createPermission'])->name('permissions.create');
     Route::post('permissions', [RolePermissionController::class, 'storePermission'])->name('permissions.store');
     Route::get('permissions/{permission}/edit', [RolePermissionController::class, 'editPermission'])->name('permissions.edit');
     Route::put('permissions/{permission}', [RolePermissionController::class, 'updatePermission'])->name('permissions.update');
     Route::delete('permissions/{permission}', [RolePermissionController::class, 'destroyPermission'])->name('permissions.destroy');
-    
+
     Route::get('/admin/permissions/set', [RolePermissionController::class, 'setAdminPermissions'])->name('admin.permissions.set');
 });
 

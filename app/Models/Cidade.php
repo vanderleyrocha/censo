@@ -16,6 +16,12 @@ class Cidade extends Model
         'updated_at'
     ];
 
+    protected $casts = [
+        'estado_id' => 'integer',
+        'regional_id' => 'integer',
+        'ibge' => 'integer',
+    ];
+
     public function estado(): BelongsTo
     {
         return $this->belongsTo(Estado::class);
@@ -28,13 +34,14 @@ class Cidade extends Model
 
     public function getIbgeFormatadoAttribute()
     {
-        if (!$this->ibge || strlen($this->ibge) !== 7) {
+        if (!$this->ibge || strlen((string)$this->ibge) !== 7) {
             return $this->ibge;
         }
 
-        $estado = substr($this->ibge, 0, 2);
-        $municipio = substr($this->ibge, 2, 4);
-        $digito = substr($this->ibge, 6, 1);
+        $ibgeString = str_pad((string)$this->ibge, 7, '0', STR_PAD_LEFT);
+        $estado = substr($ibgeString, 0, 2);
+        $municipio = substr($ibgeString, 2, 4);
+        $digito = substr($ibgeString, 6, 1);
 
         return "$estado.$municipio-$digito";
     }

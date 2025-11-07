@@ -23,10 +23,24 @@ class Escola extends Model
         'email',
         'atualizado',
         'responsavel_censo',
+        't_aluno_2024',
         'alunos_censo_2024',
         'alunos_simaed',
+        'total_registros_importados_2025',
+        'nova',
+        'encontrada',
         'created_at',
         'updated_at'
+    ];
+
+    protected $casts = [
+        'atualizado' => 'boolean',
+        'encontrada' => 'boolean',
+        't_aluno_2024' => 'integer',
+        'alunos_censo_2024' => 'integer',
+        'alunos_simaed' => 'integer',
+        'total_registros_importados_2025' => 'integer',
+        'ano_adesao' => 'integer',
     ];
 
     public function cidade(): BelongsTo

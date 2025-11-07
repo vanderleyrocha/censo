@@ -4,6 +4,7 @@ namespace App\Console\Commands;
 
 use App\Models\Aluno;
 use App\Utils\Validate;
+use Carbon\Carbon;
 use Illuminate\Console\Command;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
@@ -190,7 +191,7 @@ class AlunoCensoUpdate extends Command
 
         // Add report data
         $sheet->setCellValue('A3', 'Data do Processamento:');
-        $sheet->setCellValue('B3', now()->format('d/m/Y H:i:s'));
+        $sheet->setCellValue('B3', Carbon::now()->format('d/m/Y H:i:s'));
 
         $sheet->setCellValue('A4', 'Total de Códigos INEP com Duplicatas:');
         $sheet->setCellValue('B4', $totalDuplicates);
@@ -205,7 +206,7 @@ class AlunoCensoUpdate extends Command
         $sheet->getColumnDimension('B')->setWidth(25);
 
         // Save the report
-        $reportPath = storage_path('reports/aluno_censo_update_report_' . now()->format('Ymd_His') . '.xlsx');
+        $reportPath = storage_path('reports/aluno_censo_update_report_' . Carbon::now()->format('Ymd_His') . '.xlsx');
         if (!file_exists(dirname($reportPath))) {
             mkdir(dirname($reportPath), 0755, true);
         }

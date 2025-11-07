@@ -81,3 +81,31 @@ O script deve apresentar uma barra de progresso (ProgressBar) usando o component
 Para a barra de progresso, pode ser usado o exemplo em https://symfony.com/doc/current/components/console/helpers/progressbar.html
 
 12030686, 12021466, 12031496, 12031836, 12032727, 12031453, 12032735, 12029599, 12029580, 12033383, 12033634, 12012904, 12031518, 12010863, 12028100, 12028096, 12010960, 12028843, 12032271, 12026751, 12032603
+
+
+Criar script (Comando Artisan) Laravel 12 + Inertia + React + spatie/laravel-permission + laravel/breezer para
+ler um arquivo excel informado no primeiro parâmero e gravar os dados em uma tabela mysql informada no segundo parâmetro
+use todos os recursos disponíveis no PHP 8, laravel 12 e PhpSpreadsheet 4.3 para otimizar a execução de grandes arquivos
+incluir barra de progresso com quantidade de linhas a serem processadas, tempo estimado, tempo decorrido, percentual processado e uso da memória
+
+Criar script (Comando Artisan) Laravel 12 + Inertia + React + spatie/laravel-permission + laravel/breezer para
+ler a tabela alunos_iftp e criar o array $alunos_iftp usando id como chave e nome_aluno como valor. 
+para cada par id/nome  do array $alunos_iftp localizar na tabela alunos_simaed os registros com as seguintes condições:
+1 alunos_simaed.nome = $alunos_iftp->valor
+2 alunos_simaed.situacao_matricula  = 'Ativa'
+
+se encontrar apenas um registro, atualizar a tabela alunos_iftp com alunos_iftp.cpf = alunos_simaed.nu_cpf, alunos_iftp.codigo_escola_estadual = alunos_simaed.censo,
+alunos_iftp.nome_escola_estadual = alunos_simaed.escola, alunos_iftp.cidade = alunos_simaed.municipio, alunos_iftp.id_inep = alunos_simaed.cd_inep
+
+se não encontrar, atualize o campo alunos_iftp.obs com 'Não encontrado'
+
+se encontrar mais de um registro, atualize o campo alunos_iftp.obs com 'Encontrados x registros com esse nome', onde x corresponde a quantidade de registro encontrados
+
+use todos os recursos disponíveis no PHP 8, laravel 12 e PhpSpreadsheet 4.3 para otimizar a execução de grandes arquivos
+incluir barra de progresso com quantidade de linhas a serem processadas, tempo estimado, tempo decorrido, percentual processado e uso da memória
+
+Aplicação desenvolvido em PHP e Javascript utilizando o framework Laravel 12, em conjunto com as bibliotecas: Inertia + React + spatie/laravel-permission + laravel/breezer
+Solicitação: reescrever a div id="versao" para exibir a versão do PHP, Laravel, phpoffice/phpspreadsheet e outras bibliotecas usadas na aolicação conforme arquivo composer.json e composer.lock.json também anexos
+
+Criar script (Comando Artisan) PHP 8.2.24 + Laravel 12 + phpoffice/phpspreadsheet 5.2.0 usando boas práticas de programação baseada no princípio SOLID para
+Ler um conjunto de arquivos de planilhas do excel, checar se os dados de cada planilha correspondem a um padrão que informaremos abaixo e em caso positivo importar e processar esses dados, alimentanto a tabela aluno_censo_2025_correcao

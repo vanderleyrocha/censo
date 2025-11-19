@@ -1,164 +1,121 @@
-@include('censo.report-styles')
+<!DOCTYPE html>
+<html lang="pt-BR">
 
-<h1>Relatório de Processamento - Censo Escolar 2025</h1>
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório de Processamento - Censo 2025</title>
+    @include('censo.report-styles')
+</head>
 
-<div class='summary'>
-    <strong>Data de geração:</strong> {{ $currentDate }}<br>
-    <strong>Total de arquivos com erro:</strong> {{ $totalErrors }}
-</div>
+<body>
 
-<div class='success-summary'>
-    <strong>Processamento Concluído com Sucesso:</strong><br>
-    <strong>Total de escolas processadas:</strong> {{ $totalSchools }}<br>
-    <strong>Total de registros importados:</strong> {{ $totalRecords }}
-</div>
+    <div class="header">
+        <h1>Relatório de Processamento - Censo Escolar 2025</h1>
+        <p>Data de geração: {{ $currentDate ?? now()->format('d/m/Y H:i:s') }}</p>
+    </div>
 
-@if (!empty($schoolsByMunicipio))
-    <h2>Escolas Processadas com Sucesso</h2>
+    <div class="section">
+        <h2>Resumo do Processamento</h2>
+        <table class="tabela-resumo">
+            <tr>
+                <th>Total de arquivos com erro</th>
+                <td class="tabela-totais">{{ number_format($totalErrors ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <th>Total de escolas processadas</th>
+                <td class="tabela-totais">{{ number_format($totalSchools ?? 0, 0, ',', '.') }}</td>
+            </tr>
+            <tr>
+                <th>Total de registros importados</th>
+                <td class="tabela-totais">{{ number_format($totalRecords ?? 0, 0, ',', '.') }}</td>
+            </tr>
+        </table>
+    </div>
 
-    @php
-        $municipioSummary = [];
-    @endphp
+    @if (!empty($schoolsByMunicipio))
+        @foreach ($schoolsByMunicipio as $municipio => $schools)
+            <div class="section">
+                <h2>Município: {{ $municipio }}</h2>
+                <table class="tabela-municipio">
+                    <thead>
+                        <tr>
+                            <th>Código INEP</th>
+                            <th>Nome da Escola</th>
+                            <th>Status</th>
+                            <th class="tabela-totais">Registros Importados</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach ($schools as $school)
+                            <tr>
+                                <td>{{ $school['cod_inep_escola'] }}</td>
+                                <td>{{ $school['nome_escola'] }}</td>
+                                <td>{{ $school['nova'] ? 'NOVA' : 'ENCONTRADA' }}</td>
+                                <td class="tabela-totais">{{ number_format($school['registros_importados'] ?? 0, 0, ',', '.') }}</td>
+                            </tr>
+                        @endforeach
+                        <tr class="subtotal">
+                            <td colspan="3"><strong>Total de escolas no município:</strong></td>
+                            <td><strong>{{ count($schools) }}</strong></td>
+                        </tr>
+                        <tr class="subtotal">
+                            <td colspan="3"><strong>Total de registros importados:</strong></td>
+                            <td class="tabela-totais"><strong>{{ number_format(array_sum(array_column($schools, 'registros_importados')), 0, ',', '.') }}</strong>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        @endforeach
+    @endif
 
-    @foreach ($schoolsByMunicipio as $municipio => $schools)
-        <div class='municipio-section'>
-            <h3>Município: {{ $municipio }}</h3>
-            <table>
+    @if (!empty($reports))
+        <div class="section">
+            <h2>Arquivos com Erro ({{ count($reports) }})</h2>
+            @foreach ($reports as $report)
+                <div class="error-section">
+                    <h3>Arquivo: {{ $report['file'] }}</h3>
+                    <p><strong>Data/Hora:</strong> {{ $report['timestamp']->format('d/m/Y H:i:s') }}</p>
+                    <ul>
+                        @foreach ($report['errors'] as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+                @if (!$loop->last)
+                    <hr>
+                @endif
+            @endforeach
+        </div>
+    @endif
+
+    @if (!empty($missingSchools))
+        <div class="section">
+            <h2>Escolas Não Encontradas no Processamento</h2>
+            <table class="tabela-escolas-nao-encontradas">
                 <thead>
                     <tr>
-                        <th>Nome da Escola</th>
+                        <th>Município</th>
                         <th>Código INEP</th>
-                        <th>Registros Importados</th>
-                        <th>Status</th>
+                        <th>Nome</th>
+                        <th>Dependência</th>
+                        <th>Situação</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @php
-                        $municipioTotalSchools = 0;
-                        $municipioTotalRecords = 0;
-                    @endphp
-
-                    @foreach ($schools as $school)
-                        @php
-                            $municipioTotalSchools++;
-                            $municipioTotalRecords += $school['registros_importados'];
-                        @endphp
+                    @foreach ($missingSchools as $escola)
                         <tr>
-                            <td>{{ $school['nome_escola'] }}</td>
-                            <td>{{ $school['cod_inep_escola'] }}</td>
-                            <td>{{ $school['registros_importados'] }}</td>
-                            <td>
-                                @if ($school['nova'])
-                                    <span class="school-status-new">NOVA</span>
-                                @else
-                                    <span class="school-status-found">ENCONTRADA</span>
-                                @endif
-                            </td>
+                            <td>{{ $escola->municipio }}</td>
+                            <td>{{ $escola->id }}</td>
+                            <td>{{ $escola->nome }}</td>
+                            <td>{{ $escola->dependencia }}</td>
+                            <td>{{ $escola->situacao }}</td>
                         </tr>
                     @endforeach
-
-                    <!-- Total por município -->
-                    <tr class="total-row">
-                        <td colspan="2"><strong>TOTAL DO MUNICÍPIO</strong></td>
-                        <td><strong>{{ $municipioTotalRecords }}</strong></td>
-                        <td><strong>{{ $municipioTotalSchools }} escola(s)</strong></td>
-                    </tr>
                 </tbody>
             </table>
         </div>
-
-        @php
-            $municipioSummary[$municipio] = [
-                'total_escolas' => $municipioTotalSchools,
-                'total_registros' => $municipioTotalRecords,
-            ];
-        @endphp
-    @endforeach
-
-    <!-- Tabela resumo por município -->
-    <h2>Resumo por Município</h2>
-    <table class="summary-table">
-        <thead>
-            <tr>
-                <th>Nome do Município</th>
-                <th>Total de Escolas Importadas</th>
-                <th>Total de Registros Importados</th>
-            </tr>
-        </thead>
-        <tbody>
-            @php
-                $grandTotalSchools = 0;
-                $grandTotalRecords = 0;
-            @endphp
-
-            @foreach ($municipioSummary as $municipio => $totals)
-                @php
-                    $grandTotalSchools += $totals['total_escolas'];
-                    $grandTotalRecords += $totals['total_registros'];
-                @endphp
-                <tr>
-                    <td>{{ $municipio }}</td>
-                    <td>{{ $totals['total_escolas'] }}</td>
-                    <td>{{ $totals['total_registros'] }}</td>
-                </tr>
-            @endforeach
-
-            <!-- Total geral -->
-            <tr class="total-row">
-                <td><strong>TOTAL GERAL</strong></td>
-                <td><strong>{{ $grandTotalSchools }}</strong></td>
-                <td><strong>{{ $grandTotalRecords }}</strong></td>
-            </tr>
-        </tbody>
-    </table>
-@endif
-
-<!-- Tabela de escolas não encontradas -->
-@if (!empty($missingSchools))
-    <h2>Escolas Não Encontradas no Processamento</h2>
-    <table class="missing-schools-table">
-        <thead>
-            <tr>
-                <th>Município</th>
-                <th>ID</th>
-                <th>Nome</th>
-                <th>Dependência</th>
-                <th>Situação</th>
-                <th>Zona</th>
-                <th>Tipo Localização</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($missingSchools as $school)
-                <tr>
-                    <td>{{ $school->municipio }}</td>
-                    <td>{{ $school->id }}</td>
-                    <td>{{ $school->nome }}</td>
-                    <td>{{ $school->dependencia }}</td>
-                    <td>{{ $school->situacao }}</td>
-                    <td>{{ $school->zona }}</td>
-                    <td>{{ $school->tipo_localizacao }}</td>
-                </tr>
-            @endforeach
-        </tbody>
-    </table>
-@endif
-
-@if (!empty($reports))
-    <h2>Arquivos com Erros no Processamento</h2>
-
-    @foreach ($reports as $report)
-        <div class='error-file'>
-            <strong>Arquivo:</strong> {{ $report['file'] }}<br>
-            <strong>Data do erro:</strong> {{ $report['timestamp']->format('d/m/Y H:i:s') }}<br>
-            <strong>Erros encontrados:</strong>
-
-            @foreach ($report['errors'] as $error)
-                <div class='error-list'>• {{ $error }}</div>
-            @endforeach
-        </div>
-    @endforeach
-@endif
+    @endif
 
 </body>
 

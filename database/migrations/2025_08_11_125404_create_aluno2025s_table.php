@@ -12,6 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('aluno2025', function (Blueprint $table) {
+            $table->collation = 'utf8mb4_0900_ai_ci';
             $table->id();
             $table->bigInteger('cod_inep_escola');
             $table->string('nome_escola');

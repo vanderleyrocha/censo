@@ -53,3 +53,8 @@ FROM frequencia_pendente_mec
 WHERE CO_ENTIDADE = 12007617 AND MES_REFERENCIA = 3 AND NOT turma is null AND situacao_escola = 'Ativa'
 ORDER by situacao_escola, ESTUDANTE_NOME 
 
+SELECT c.nome municipio, e.id cd_inep_escola, e.nome, e.zona, e.dependencia, e.situacao, e.total_registros_importados_2025, e.nova, e.encontrada
+FROM escolas e JOIN cidades c ON c.id = e.cidade_id
+WHERE e.encontrada = 1 OR e.situacao = 'Em Funcionando em 2025' OR e.total_registros_importados_2025 > 0
+ORDER BY municipio, e.dependencia, e.nome
+

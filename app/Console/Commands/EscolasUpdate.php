@@ -52,7 +52,7 @@ class EscolasUpdate extends Command
             $header = array_shift($rows);
             
             // Verificar se as colunas esperadas existem
-            $expectedColumns = ['cidade', 'dependencia', 'zona', 'id', 'nome'];
+            $expectedColumns = ['cidade', 'dependencia', 'id', 'nome'];
             $headerLower = array_map('strtolower', $header);
             
             foreach ($expectedColumns as $expected) {
@@ -66,7 +66,7 @@ class EscolasUpdate extends Command
             $columnIndexes = [
                 'cidade' => array_search('cidade', $headerLower),
                 'dependencia' => array_search('dependencia', $headerLower),
-                'zona' => array_search('zona', $headerLower),
+                // 'zona' => array_search('zona', $headerLower),
                 'id' => array_search('id', $headerLower),
                 'nome' => array_search('nome', $headerLower),
             ];
@@ -86,7 +86,7 @@ class EscolasUpdate extends Command
                 $progressBar->advance();
                 
                 // Liberar memória periodicamente
-                if (count($ids) % 1000 === 0) {
+                if (count($ids) % 2000 === 0) {
                     gc_collect_cycles();
                 }
             }
@@ -110,7 +110,7 @@ class EscolasUpdate extends Command
 
             foreach (array_chunk($ids, $chunkSize) as $chunk) {
                 $updated = Escola::whereIn('id', $chunk)
-                    ->update(['situacao' => 'Funcionando em 2024']);
+                    ->update(['situacao' => 'Funcionando em 2025']);
                 $totalUpdated += $updated;
                 $progressBar->advance();
                 

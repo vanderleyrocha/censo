@@ -52,6 +52,7 @@ class Censo2025Processor
         return $this->successfulSchools;
     }
 
+
     public function processAllFiles(): array
     {
         Log::info("executando método Censo2025Processor@processAllFiles");
@@ -62,6 +63,7 @@ class Censo2025Processor
             $this->output->writeln("<info>Total de arquivos encontrados para processamento: {$totalFiles}</info>");
             $this->output->writeln("<info>Tamanho do chunk: {$this->chunkSize} registros</info>");
         }
+
         Log::info("Total de arquivos encontrados para processamento: {$totalFiles}");
         Log::info("Tamanho do chunk definido: {$this->chunkSize}");
 
@@ -74,30 +76,41 @@ class Censo2025Processor
             'errors' => 0,
             'records' => 0,
             'reports' => [],
-            'successful_schools' => [] // Adicionar escolas bem-sucedidas aos resultados
+            'successful_schools' => []
         ];
 
-        foreach ($files as $key => $file) {
-            $result = $this->processSingleFile($file);
+        // MODIFICAÇÃO: Processar em lotes menores para liberar memória
+        $batchSize = 50; // Processar 50 arquivos por vez
+        $batches = array_chunk($files, $batchSize);
 
-            if ($result['success']) {
-                // \Log::info("Arquivo {$key} processado com sucesso: {$file}");
-                $results['processed']++;
-                $results['records'] += $result['records'];
+        foreach ($batches as $batchIndex => $batchFiles) {
+            $this->output->writeln("<info>Processando lote " . ($batchIndex + 1) . " de " . count($batches) . "</info>");
 
-                // Adicionar escola aos resultados bem-sucedidos
-                if (isset($result['school_info'])) {
-                    $results['successful_schools'][] = $result['school_info'];
-                    $this->successfulSchools[] = $result['school_info'];
+            foreach ($batchFiles as $key => $file) {
+                $result = $this->processSingleFile($file);
+
+                if ($result['success']) {
+                    $results['processed']++;
+                    $results['records'] += $result['records'];
+
+                    if (isset($result['school_info'])) {
+                        $results['successful_schools'][] = $result['school_info'];
+                        $this->successfulSchools[] = $result['school_info'];
+                    }
+                } else {
+                    $results['errors']++;
+                    $results['reports'][] = $result['report'];
                 }
-            } else {
-                \Log::error("Arquivo {$key} processado com erro: {$file}");
-                $results['errors']++;
-                $results['reports'][] = $result['report'];
+
+                $this->processedFiles++;
+                $this->advanceProgress($totalFiles);
+
+                // MODIFICAÇÃO: Limpar memória após cada arquivo
+                $this->cleanupMemory();
             }
 
-            $this->processedFiles++;
-            $this->advanceProgress($totalFiles);
+            // MODIFICAÇÃO: Forçar coleta de lixo entre lotes
+            $this->forceGarbageCollection();
         }
 
         $this->finishProgress();
@@ -113,65 +126,49 @@ class Censo2025Processor
     private function processSingleFile(string $filePath): array
     {
         try {
+            // MODIFICAÇÃO: Usar leitura mais eficiente
             $spreadsheet = $this->fileHandler->loadSpreadsheet($filePath);
             $worksheet = $spreadsheet->getActiveSheet();
-
-            $debugCells = [
-                'K14' => $worksheet->getCell('K14')->getValue(),
-                'K15' => $worksheet->getCell('K15')->getValue(),
-                'K17' => $worksheet->getCell('K17')->getValue(),
-                'K18' => $worksheet->getCell('K18')->getValue(),
-                'K19' => $worksheet->getCell('K19')->getValue(),
-            ];
 
             // Validar estrutura básica
             $validationResult = $this->validator->validateStructure($worksheet);
             if (!$validationResult['valid']) {
-                \Log::warning("Arquivo {$filePath} inválido: " . implode(', ', $validationResult['errors']));
                 return $this->createErrorResult($filePath, $validationResult['errors']);
             }
 
             // Extrair dados da escola
             $schoolData = $this->dataMapper->extractSchoolData($worksheet);
-            // \Log::info("Dados da escola " . $schoolData["nome_escola"] . " extraídos com sucesso", $schoolData);
 
             // Processar cidade
             $city = $this->repository->findOrCreateCity($schoolData['municipio']);
             if (!$city) {
-                \Log::warning("Cidade não encontrada: {$schoolData['municipio']}");
                 return $this->createErrorResult($filePath, ['Cidade não encontrada: ' . $schoolData['municipio']]);
             }
 
             // Processar escola
             $school = $this->repository->findOrCreateSchool($schoolData, $city->id);
-            // \Log::info("Escola processada: ID {$school->id}");
 
-            // Processar dados dos alunos
+            // MODIFICAÇÃO: Processar alunos em chunks menores
             $studentData = $this->dataMapper->extractStudentData($worksheet, $schoolData);
 
-            // $data = [
-            //     "schoolData" => $schoolData,
-            //     "studentData" => $studentData,
-            // ];
-
-            // dd($data);
-
-            // \Log::info("Total de alunos extraídos: " . count($studentData));
-
             if (empty($studentData)) {
-                \Log::warning("Nenhum aluno extraído para a escola (" . $schoolData["cod_inep_escola"] . ") do arquivo: {$filePath}");
                 return $this->createErrorResult($filePath, ['Nenhum aluno encontrado para processar']);
             }
 
-            // Usar o chunk size configurado para inserção em lote
-            $processedRecords = $this->repository->bulkInsertStudents($studentData, $this->chunkSize);
-            // \Log::info("Registros inseridos: {$processedRecords}");
+            // MODIFICAÇÃO: Usar chunk size menor para inserção
+            $processedRecords = $this->repository->bulkInsertStudents($studentData, min($this->chunkSize, 100));
+
+            // MODIFICAÇÃO: Limpar dados dos alunos da memória imediatamente
+            unset($studentData);
 
             // Atualizar estatísticas da escola
             $this->repository->updateSchoolImportStats($school->id, $processedRecords);
 
             // Mover arquivo processado
-            $this->fileHandler->copyProcessedFile($filePath, $schoolData['municipio'], $school->id, $schoolData['nome_escola']);
+            $this->fileHandler->moveProcessedFile($filePath, $schoolData['municipio'], $school->id, $schoolData['nome_escola']);
+
+            // MODIFICAÇÃO: Limpar planilha da memória
+            unset($spreadsheet, $worksheet);
 
             return [
                 'success' => true,
@@ -187,9 +184,33 @@ class Censo2025Processor
                 ]
             ];
         } catch (\Exception $e) {
-            \Log::error("Erro ao processar arquivo {$filePath}: " . $e->getMessage());
-            \Log::error($e->getTraceAsString());
-            return $this->createErrorResult($filePath, ['Erro durante processamento: ' . $e->getMessage()]);
+            $errorMessage = substr($e->getMessage(), 0, 1000) . (strlen($e->getMessage()) > 1000 ? '...' : '');
+            \Log::error("Erro ao processar arquivo {$filePath}");
+            \Log::error($errorMessage);
+            return $this->createErrorResult($filePath, ['Erro durante processamento: ' . $errorMessage]);
+        }
+    }
+
+    // NOVOS MÉTODOS PARA GERENCIAMENTO DE MEMÓRIA
+    private function cleanupMemory(): void
+    {
+        if (function_exists('gc_mem_caches')) {
+            gc_mem_caches();
+        }
+    }
+
+    private function forceGarbageCollection(): void
+    {
+        if (function_exists('gc_collect_cycles')) {
+            gc_collect_cycles();
+        }
+
+        // Limpar cache do Doctrine se estiver sendo usado
+        if (class_exists('Doctrine\Common\Cache\Cache')) {
+            $em = app('Doctrine\ORM\EntityManager');
+            if ($em) {
+                $em->clear();
+            }
         }
     }
 

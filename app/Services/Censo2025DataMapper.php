@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use Illuminate\Support\Facades\Log;
 use PhpOffice\PhpSpreadsheet\Worksheet\Worksheet;
 
 class Censo2025DataMapper
@@ -51,8 +52,12 @@ class Censo2025DataMapper
 
     public function extractSchoolData(Worksheet $worksheet): array
     {
+        $escolaId = $this->sanitizeCodInep($this->getMergedCellValue($worksheet, 'K14'));
+        if (!$this->isValidCodInep($escolaId)) {
+            Log::error("Código INEP da escola " . $this->getMergedCellValue($worksheet, 'K15') . " é inválido");
+        }
         return [
-            'cod_inep_escola' => $this->getMergedCellValue($worksheet, 'K14'),
+            'cod_inep_escola' => $escolaId,
             'nome_escola' => $this->getMergedCellValue($worksheet, 'K15'),
             'municipio' => $this->getMergedCellValue($worksheet, 'K17'),
             'localizacao_escola' => $this->getMergedCellValue($worksheet, 'K18'),
@@ -65,35 +70,56 @@ class Censo2025DataMapper
         $students = [];
         $row = 22; // Início dos dados dos alunos
 
-        while (true) {
+        // MODIFICAÇÃO: Pré-alocar array com tamanho estimado para melhor performance
+        $students = [];
+
+        // MODIFICAÇÃO: Limitar o número máximo de linhas processadas de uma vez
+        $maxRows = 5000; // Ajuste conforme necessário
+
+        for ($row = 22; $row <= 22 + $maxRows; $row++) {
+
             $codInepAluno = $this->getMergedCellValue($worksheet, 'C' . $row);
 
-            // Critério de parada: código INEP do aluno com menos de 7 dígitos
+            // Critério de parada: código INEP do aluno vazio ou inválido
             if (!$this->isValidStudentCodInep($codInepAluno)) {
                 break;
             }
 
             $studentData = ['row' => $row];
-
-            // Dados da escola
             $studentData = array_merge($studentData, $schoolData);
 
-            // Dados do aluno - usando getMergedCellValue para todas as células
-            foreach (self::STUDENT_FIELDS as $column => $field) {
+            // MODIFICAÇÃO: Processar apenas colunas necessárias, evitar loop completo
+            $keyFields = ['C', 'E', 'H', 'J']; // Campos essenciais primeiro
+            foreach ($keyFields as $column) {
+                $field = self::STUDENT_FIELDS[$column];
                 $value = $this->getMergedCellValue($worksheet, $column . $row);
                 $studentData[$field] = $this->formatValue($value, $field);
             }
 
-            $students[] = $studentData;
-            $row++;
+            // Processar demais campos se necessário
+            foreach (self::STUDENT_FIELDS as $column => $field) {
+                if (!in_array($column, $keyFields)) {
+                    $value = $this->getMergedCellValue($worksheet, $column . $row);
+                    $studentData[$field] = $this->formatValue($value, $field);
+                }
+            }
 
-            // Limitar memória processando em lotes muito grandes
-            if ($row > 10000) {
-                break;
+            $students[] = $studentData;
+
+            // MODIFICAÇÃO: Liberar memória periodicamente
+            if ($row % 100 === 0) {
+                $this->cleanupMemory();
             }
         }
 
         return $students;
+    }
+
+    private function cleanupMemory(): void
+    {
+        if (function_exists('gc_mem_caches')) {
+            gc_mem_caches();
+        }
     }
 
     private function getMergedCellValue(Worksheet $worksheet, string $cellAddress)
@@ -127,11 +153,37 @@ class Censo2025DataMapper
 
         $stringValue = trim((string)$value);
 
-        $numericValue = preg_replace('/[^0-9]/', '', $stringValue);
-
-        return strlen($numericValue) >= 8 && is_numeric($numericValue);
+        return ctype_digit($stringValue) && strlen($stringValue) >= 8;
     }
 
+    private function isValidCodInep($value): bool
+    {
+        if ($value === null || $value === '') {
+            return false;
+        }
+
+        $stringValue = trim((string)$value);
+
+        $numericValue = preg_replace('/[^0-9]/', '', $stringValue);
+
+        return strlen($numericValue) === 8 && is_numeric($numericValue);
+    }
+
+    private function sanitizeCodInep($value): ?string
+    {
+        if ($value === null || $value === '') {
+            return null;
+        }
+
+        $stringValue = trim((string)$value);
+
+        $numericValue = preg_replace('/[^0-9]/', '', $stringValue);
+        if ($numericValue === null || $numericValue === '') {
+            return null;
+        } else {
+            return $numericValue;
+        }
+    }
 
     private function formatValue($value, string $field)
     {

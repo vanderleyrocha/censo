@@ -11,13 +11,12 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('regionais', function (Blueprint $table) {
+        Schema::create('regioes', function (Blueprint $table) {
             $table->collation = 'utf8mb4_0900_ai_ci';
             $table->id();
             $table->string('nome')->unique();
             $table->string('sigla')->unique();
             $table->foreignId('servidor_id')->nullable()->index();
-            $table->foreignId('regiao_id')->nullable();
             $table->timestamps();
         });
     }
@@ -27,6 +26,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('regionais');
+        Schema::dropIfExists('regioes');
     }
 };

@@ -6,10 +6,14 @@ use App\Models\Cidade;
 use App\Models\Escola;
 use App\Models\AlunoCenso2025Correcao;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
+
+use function Illuminate\Log\log;
 
 class Censo2025Repository
 {
+
     public function findOrCreateCity(string $municipio): ?Cidade
     {
         // Buscar cidade ignorando acentos e case
@@ -36,10 +40,11 @@ class Censo2025Repository
         if ($existingSchool) {
             // Escola encontrada - atualizar campos
             $existingSchool->update([
-                'nome' => $schoolData['nome_escola'],
-                'zona' => $schoolData['localizacao_escola'],
-                'dependencia' => $schoolData['dependencia_administrativa'],
-                'cidade_id' => $cityId,
+                // 'id' => $schoolData['cod_inep_escola'],
+                // 'nome' => $schoolData['nome_escola'],
+                // 'zona' => $schoolData['localizacao_escola'],
+                // 'dependencia' => $schoolData['dependencia_administrativa'],
+                // 'cidade_id' => $cityId,
                 'situacao' => 'Ativa',
                 'encontrada' => true, // Marcar como encontrada
                 'updated_at' => now()
@@ -47,6 +52,7 @@ class Censo2025Repository
             return $existingSchool;
         } else {
             // Criar nova escola
+            Log::info("Escola (" . $schoolData['cod_inep_escola'] . ") não foi encontrada");
             return Escola::create([
                 'id' => $schoolData['cod_inep_escola'],
                 'nome' => $schoolData['nome_escola'],

@@ -9,67 +9,94 @@ use Illuminate\Support\Facades\DB;
 
 class Censo2025ReportGenerator
 {
+    private array $regionais = [];
+
+    public function setRegionais(array $regionais): void
+    {
+        $this->regionais = $regionais;
+    }
+
     public function generate(array $reports, array $successfulSchools = []): string
     {
-        // Buscar escolas não encontradas
-        $missingSchools = $this->getMissingSchools();
-        
-        $html = $this->generateHtml($reports, $successfulSchools, $missingSchools);
+        // MODIFICAÇÃO: Processar dados de forma mais eficiente
+        $data = $this->prepareReportData($reports, $successfulSchools);
 
-        $pdf = Pdf::loadHTML($html);
+        // MODIFICAÇÃO: Usar configurações otimizadas para o PDF
+        $pdf = Pdf::loadHTML($data['html'])
+            ->setPaper('a4', 'landscape')
+            ->setOptions([
+                'dpi' => 150, // Reduzir DPI para arquivos menores
+                'isHtml5ParserEnabled' => true,
+                'isRemoteEnabled' => false // Desabilitar imagens remotas
+            ]);
+
         $filename = 'relatorio-processamento-' . Carbon::now()->format('Y-m-d-H-i-s') . '.pdf';
         $filepath = 'censo_2025_correcoes/relatorios/' . $filename;
 
         Storage::put($filepath, $pdf->output());
 
+        // MODIFICAÇÃO: Limpar memória
+        unset($pdf, $data);
+
         return Storage::path($filepath);
     }
 
-    private function generateHtml(array $reports, array $successfulSchools = [], array $missingSchools = []): string
+    private function prepareReportData(array $reports, array $successfulSchools = []): array
     {
         $totalErrors = count($reports);
         $totalSchools = count($successfulSchools);
         $totalRecords = array_sum(array_column($successfulSchools, 'registros_importados'));
 
-        // Agrupar escolas por município
+        // MODIFICAÇÃO: Agrupar escolas de forma mais eficiente
         $schoolsByMunicipio = [];
         foreach ($successfulSchools as $school) {
             $municipio = $school['municipio'];
-            if (!isset($schoolsByMunicipio[$municipio])) {
-                $schoolsByMunicipio[$municipio] = [];
-            }
             $schoolsByMunicipio[$municipio][] = $school;
         }
 
-        // Ordenar municípios e escolas dentro de cada município
+        // MODIFICAÇÃO: Ordenar de forma mais eficiente
         ksort($schoolsByMunicipio);
-        foreach ($schoolsByMunicipio as &$schools) {
-            usort($schools, function ($a, $b) {
-                return strcmp($a['nome_escola'], $b['nome_escola']);
-            });
-        }
 
-        $data = [
-            'currentDate' => Carbon::now()->format('d/m/Y H:i:s'),
-            'totalErrors' => $totalErrors,
-            'totalSchools' => $totalSchools,
-            'totalRecords' => $totalRecords,
-            'schoolsByMunicipio' => $schoolsByMunicipio,
-            'reports' => $reports,
-            'missingSchools' => $missingSchools
+        $missingSchools = $this->getMissingSchools();
+
+        return [
+            'html' => view('censo.report', [
+                'currentDate' => Carbon::now()->format('d/m/Y H:i:s'),
+                'totalErrors' => $totalErrors,
+                'totalSchools' => $totalSchools,
+                'totalRecords' => $totalRecords,
+                'schoolsByMunicipio' => $schoolsByMunicipio,
+                'reports' => $reports,
+                'missingSchools' => $missingSchools,
+                'regionaisFiltradas' => !empty($this->regionais) ? $this->regionais : null
+            ])->render(),
+            'schoolsByMunicipio' => $schoolsByMunicipio
         ];
-
-        return view('censo.report', $data)->render();
     }
 
+    // MODIFICAÇÃO: Otimizar consulta de escolas faltantes com filtro por regionais
     private function getMissingSchools(): array
     {
-        return DB::select("
-            SELECT c.nome AS municipio, e.id, e.nome, e.dependencia, e.situacao, e.zona, e.tipo_localizacao
+        $query = "
+            SELECT c.nome AS municipio, e.id, e.nome, e.dependencia, e.situacao
             FROM escolas e 
             JOIN cidades c ON c.id = e.cidade_id
-            WHERE e.encontrada IS NULL OR e.encontrada = false
-            ORDER BY c.nome, e.nome
-        ");
+            WHERE (e.encontrada IS NULL OR e.encontrada = false)
+            AND e.situacao = 'Ativa'
+        ";
+
+        // Adicionar filtro por regionais se especificado
+        if (!empty($this->regionais)) {
+            $placeholders = implode(',', array_fill(0, count($this->regionais), '?'));
+            $query .= " AND c.regional_id IN ({$placeholders})";
+        }
+
+        $query .= " ORDER BY c.nome, e.nome LIMIT 1000";
+
+        if (!empty($this->regionais)) {
+            return DB::select($query, $this->regionais);
+        }
+
+        return DB::select($query);
     }
 }

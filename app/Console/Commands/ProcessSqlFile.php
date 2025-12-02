@@ -6,10 +6,20 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
+use App\Services\StringService;
+
 class ProcessSqlFile extends Command
 {
     protected $signature = 'sql:process-file {file : Caminho do arquivo SQL} {--chunk-size=100 : Quantidade de INSERTs por transação}';
     protected $description = 'Processa arquivo SQL extraindo e executando comandos INSERT INTO alunos';
+
+    protected StringService $stringService;
+
+    public function __construct(StringService $stringService)
+    {
+        parent::__construct();
+        $this->stringService = $stringService;
+    }
 
     private $totalBlocks = 0;
     private $processedBlocks = 0;
@@ -131,7 +141,9 @@ class ProcessSqlFile extends Command
 
                 // Detecta fim do INSERT (ponto e vírgula)
                 if ($inInsert && str_contains($trimmedLine, ';')) {
-                    $currentChunk[] = $currentInsert;
+                    // Processa a query para corrigir sequências problemáticas
+                    $processedQuery = $this->stringService->replacesBackslashWithApostrophe($currentInsert);
+                    $currentChunk[] = $processedQuery;
                     $inInsert = false;
                     $currentInsert = '';
 
@@ -152,7 +164,8 @@ class ProcessSqlFile extends Command
 
         // Processa buffer final e chunk restante
         if ($inInsert && str_contains($buffer, ';')) {
-            $currentChunk[] = $currentInsert . ' ' . $buffer;
+            $processedQuery = $this->stringService->replacesBackslashWithApostrophe($currentInsert . ' ' . $buffer);
+            $currentChunk[] = $processedQuery;
         }
 
         if (!empty($currentChunk)) {
@@ -164,11 +177,12 @@ class ProcessSqlFile extends Command
         fclose($handle);
     }
 
+
     private function executeChunk(array $queries)
     {
         try {
             DB::beginTransaction();
-
+            DB::statement("SET FOREIGN_KEY_CHECKS=0;");
             foreach ($queries as $query) {
                 // Remove possíveis caracteres problemáticos
                 $query = trim($query);
@@ -193,6 +207,8 @@ class ProcessSqlFile extends Command
             ]);
 
             throw $e;
+        } finally {
+            DB::statement("SET FOREIGN_KEY_CHECKS=1;");
         }
     }
 

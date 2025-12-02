@@ -58,3 +58,8 @@ FROM escolas e JOIN cidades c ON c.id = e.cidade_id
 WHERE e.encontrada = 1 OR e.situacao = 'Em Funcionando em 2025' OR e.total_registros_importados_2025 > 0
 ORDER BY municipio, e.dependencia, e.nome
 
+
+SELECT DISTINCT cod_inep_escola, nome_escola, nome, data_nascimento, cpf, cor_raca, nome_turma, poder_publico_responsavel, tipo_veiculo_transporte_escolar
+FROM aluno_censo_2025_correcao
+WHERE municipio = 'Marechal Thaumaturgo' AND dependencia_administrativa  = 'Municipal' AND usa_transporte_escolar = 'sim'
+ORDER BY nome_escola, nome

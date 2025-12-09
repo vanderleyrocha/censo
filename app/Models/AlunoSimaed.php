@@ -6,11 +6,13 @@ use Illuminate\Database\Eloquent\Model;
 
 class AlunoSimaed extends Model
 {
-    protected $table = 'alunos_simaed';
+    protected $table = 'alunos_simaed_2025_11_23';
     protected $fillable = [
+        'data_importacao',
         'alunos_encontrados',
         'cadastros_encontrados',
         'ra',
+        'ra_diferente',
         'cadastro_id',
         'cd_inep',
         'cadastro_censo',
@@ -21,6 +23,7 @@ class AlunoSimaed extends Model
         'nu_cpf',
         'cpf_igual_censo',
         'matricula_duplicada',
+        'chave_localizacao',
         'cpf_diferente_censo',
         'cpf_censo',
         'aluno_sem_cpf',
@@ -33,7 +36,6 @@ class AlunoSimaed extends Model
         'pis',
         'nome',
         'nascimento',
-        'dt_nascimento',
         'sem_nascimento_censo',
         'nascimento_diferente_censo',
         'sem_nascimento_simaed',
@@ -52,9 +54,12 @@ class AlunoSimaed extends Model
         'periodo',
         'nivel',
         'modalidade',
+        'modalidade1',
+        'modalidade2',
         'etapa',
         'etapa_sgp',
         'turma',
+        'turma_multi',
         'cor',
         'endereco',
         'numero',
@@ -83,6 +88,7 @@ class AlunoSimaed extends Model
         'bolsa_familia',
         'cartao_sus',
         'turno',
+        'tipo_matricula',
         'data_matricula',
         'situacao_matricula',
         'situacao_mec',
@@ -93,12 +99,52 @@ class AlunoSimaed extends Model
         'sem_naturalidade',
         'nacionalidade',
         'sem_nacionalidade',
+        'dt_cadastro',
         'obs',
-        'created_at',
-        'updated_at',
-        'tipo_matricula'
     ];
 
-    public $timestamps = false;
+    protected $casts = [
+        'data_importacao' => 'date',
+        'alunos_encontrados' => 'integer',
+        'cadastros_encontrados' => 'integer',
+        'ra' => 'integer',
+        'cadastro_id' => 'integer',
+        'aluno_sem_cd_inep' => 'boolean',
+        'cd_inep_erro' => 'boolean',
+        'cd_inep_diferente_censo' => 'boolean',
+        'cpf_igual_censo' => 'boolean',
+        'matricula_duplicada' => 'boolean',
+        'cpf_diferente_censo' => 'boolean',
+        'aluno_sem_cpf' => 'boolean',
+        'nu_cpf_valido' => 'boolean',
+        'cpf_duplicado' => 'boolean',
+        'mesmo_cpf_aluno_responsavel' => 'boolean',
+        'nis_invalido' => 'boolean',
+        'aluno_sem_nis' => 'boolean',
+        'nascimento' => 'date',
+        'sem_nascimento_censo' => 'boolean',
+        'nascimento_diferente_censo' => 'boolean',
+        'sem_nascimento_simaed' => 'boolean',
+        'nascimento_simaed_erro' => 'boolean',
+        'nascimento_censo_erro' => 'boolean',
+        'aluno_nome_mae_errado' => 'boolean',
+        'aluno_sem_nome_mae' => 'boolean',
+        'censo' => 'integer',
+        'etapa_sgp' => 'integer',
+        'turma_multi' => 'boolean',
+        'aluno_id_responsavel_cpf' => 'integer',
+        'responsavel_cpf_invalido' => 'boolean',
+        'responsavel_sem_cpf' => 'boolean',
+        'data_expedicao' => 'date',
+        'data_matricula' => 'date',
+        'data_encerramento' => 'date',
+        'ano_referencia' => 'integer',
+        'sem_naturalidade' => 'boolean',
+        'sem_nacionalidade' => 'boolean',
+        'dt_cadastro' => 'date',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
+
 
 }

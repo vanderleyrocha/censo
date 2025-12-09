@@ -9,8 +9,8 @@ class Aluno2025 extends Model
 {
     use HasFactory;
 
-    protected $table = 'aluno2025';
-    public $timestamps = false;
+    protected $table = 'alunos_censo_2025';
+    
     protected $fillable = [
         'cod_inep_escola',
         'nome_escola',

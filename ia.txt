@@ -109,3 +109,20 @@ Solicitação: reescrever a div id="versao" para exibir a versão do PHP, Larave
 
 Criar script (Comando Artisan) PHP 8.2.24 + Laravel 12 + phpoffice/phpspreadsheet 5.2.0 usando boas práticas de programação baseada no princípio SOLID para
 Ler um conjunto de arquivos de planilhas do excel, checar se os dados de cada planilha correspondem a um padrão que informaremos abaixo e em caso positivo importar e processar esses dados, alimentanto a tabela aluno_censo_2025_correcao
+
+
+Criar script (Comando Artisan) com o nome ListarAlunoCenso PHP 8.2.24 + Laravel 12 + phpoffice/phpspreadsheet 5.2.0 usando boas práticas de programação baseada no princípio SOLID para gerar uma planilha excel com base nos critérios abaixo:
+1. parâmetros obrigatórios: ano e tipo (geral, parcial)
+2. parâmtros opcionais: dependencia_administrativa, municipio, localizacao_escola, cod_inep_escola, tipo_turma, tipo_mediacao, formas_organizacao_turma, turma_formacao_alternancia
+3. o parâmetro ano define a model principal a ser utilizada [2023 => Aluno2023, 2024 => Aluno2024, 2025 => Aluno2025]
+4. o parâmetro tipo define se todas as colunas serão listadas ou apenas uma parte
+5. cada parâmetro opcional representa um filtro baseado no próprio nome do parâmetro que representa o nome da coluna na tabela do banco de dados e se informado, deve informar o valor do filtro que será aplicado
+6. a planilha deve ter os seguintes títulos (1 por linha)
+6.1 Departamento de Dados e Estatísticas Educacionais (negrito, fonte 24)
+6.2 Divisão de Censo Escolar (negrito, fonte 18)
+6.2 Relação de Alunos do Censo Escolar - $ano (negrito, itálico, fonte 14)
+6.3 filtros
+
+Tente estabelecer uma relação entre o nome das colunas e seus respectivos títulos (não estão na mesma ordem)
+colunas => "cod_inep_escola";"nome_escola";"municipio";"localizacao_escola";"dependencia_administrativa";"ordem";"cod_inep_aluno";"nome";"data_nascimento";"nascimento";"cpf";"nacionalidade";"cor_raca";"povo_indigena";"sexo";"tipo_deficiencia";"tipo_transtorno";"recursos_saeb";"tipo_aee";"escolarizacao_outro_espaco";"localizacao_residencia";"localizacao_diferenciada_residencia";"usa_transporte_escolar";"poder_publico_responsavel";"tipo_veiculo_transporte_escolar";"etapa_aluno_turma_multi";"codigo_matricula";"codigo_turma";"nome_turma";"tipo_mediacao";"tipo_turma";"etapa_agregada";"etapa_ensino";"formas_organizacao_turma";"local_funcionamento_diferenciado_da_turma";"dias_semana_horario";"carga_horaria_semanal";"classe_especial";"classe_bilingue_surdos";"turma_formacao_alternancia";"areas_conhecimento";"organizacao_curricular_turma";"areas_itinerario_formativo";"tipo_curso_ftp";"codido_nome_curso_ftp";"atividade_complementar"
+Títulos => Identificação única;Nome;Data de nascimento;CPF;Nacionalidade;Cor/Raça;Povo indígena;Sexo;Tipo(s) de deficiência(s), transtorno(s) do espectro autista e altas habilidades ou superdotação;Tipo(s) de transtorno(s) que impacta(m) o desenvolvimento da aprendizagem;Recursos para o uso do(a) aluno(a) em sala de aula para a participação em avaliações do Inep (Saeb);Tipo de atendimento educacional especializado;Recebe escolarização em outro espaço (diferente da escola);Localização/Zona de residência;Localização diferenciada de residência;Transporte escolar (Sim/Não);Poder Público responsável;Tipo de veículo utilizado no transporte escolar;Etapa de vínculo do(a) aluno(a) (Para turmas do tipo multi);Código da Matrícula;Código da turma;Nome da turma;Tipo de mediação didático-pedagógica;Tipo de turma;Etapa Agregada;Etapa de ensino;Formas de organização da turma;Local de funcionamento diferenciado da turma;Dias da semana e horário de funcionamento;Carga horária semanal (hh:mm);Turma de educação especial (classe especial);Turma de Educação Bilingue de Surdos (classe bilingue de surdos);Turma de Formação por Alternância (proposta pedagógica de formação por alternância: tempo - escola e tempo - comunidade);Áreas do conhecimento/componentes curriculares;Organização curricular da turma;Área(s) do itinerário formativo;Tipo do curso do itinerário de formação técnica e profissional;Código e nome do curso técnico;Atividade(s) complementar(es)

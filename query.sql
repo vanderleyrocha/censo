@@ -60,6 +60,52 @@ ORDER BY municipio, e.dependencia, e.nome
 
 
 SELECT DISTINCT cod_inep_escola, nome_escola, nome, data_nascimento, cpf, cor_raca, nome_turma, poder_publico_responsavel, tipo_veiculo_transporte_escolar
-FROM aluno_censo_2025_correcao
+FROM alunos_censo_2025
 WHERE municipio = 'Marechal Thaumaturgo' AND dependencia_administrativa  = 'Municipal' AND usa_transporte_escolar = 'sim'
 ORDER BY nome_escola, nome
+
+alunos_censo_2025.tipo_turma
+1. Curricular (etapa de ensino)
+2. Atendimento educacional especializado (AEE)
+3. Atividade complementar
+4. Curricular (etapa de ensino) com Atividade Complementar
+
+
+-- AEE município
+SELECT id, municipio, dependencia_administrativa, localizacao_escola, cod_inep_escola, nome_escola, codigo_turma, nome_turma, etapa_ensino,
+	local_funcionamento_diferenciado_da_turma, dias_semana_horario, tipo_aee, classe_especial, etapa_agregada, organizacao_curricular_turma, cod_inep_aluno, nome, cpf
+FROM alunos_censo_2025
+WHERE municipio = 'Rio Branco' AND dependencia_administrativa = 'Municipal' AND tipo_aee is NOT null
+ORDER BY localizacao_escola, nome_escola
+
+UPDATE alunos_censo_2025
+SET tipo_aee = NULL
+WHERE tipo_aee = '--'
+
+UPDATE alunos_censo_2025
+SET prioridade = 1
+WHERE tipo_turma = 'Curricular (etapa de ensino)';
+
+UPDATE alunos_censo_2025
+SET prioridade = 2
+WHERE tipo_turma = 'Curricular (etapa de ensino) com Atividade Complementar';
+
+UPDATE alunos_censo_2025
+SET prioridade = 4
+WHERE tipo_turma = 'Atividade complementar';
+
+UPDATE alunos_censo_2025
+SET prioridade = 3
+WHERE tipo_turma = 'Atendimento educacional especializado (AEE)';
+
+ALTER TABLE alunos_censo_2025 ADD prioridade TINYINT(1) NULL AFTER atividade_complementar;
+ALTER TABLE alunos_censo_2025 ADD registro_unico TINYINT(1) NULL AFTER prioridade;
+ALTER TABLE alunos_censo_2025 ADD cpf_valido TINYINT(1) NULL AFTER registro_unico;
+
+            'cod_inep_escola',
+            'nome_escola',
+            'municipio',
+            'dependencia_administrativa',
+            'prioridade',
+            'registro_unico',
+            'cpf_valido',

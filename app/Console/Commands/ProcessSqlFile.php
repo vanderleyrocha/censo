@@ -37,6 +37,11 @@ class ProcessSqlFile extends Command
             return 1;
         }
 
+        ini_set('memory_limit', '8192M'); // Ajuste conforme necessário
+        ini_set('max_execution_time', 0); // Sem limite de tempo
+        set_time_limit(0);
+        gc_enable();
+
         $this->fileSize = filesize($filePath);
         $this->startTime = microtime(true);
 

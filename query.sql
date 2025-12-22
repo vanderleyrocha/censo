@@ -109,3 +109,27 @@ ALTER TABLE alunos_censo_2025 ADD cpf_valido TINYINT(1) NULL AFTER registro_unic
             'prioridade',
             'registro_unico',
             'cpf_valido',
+
+SELECT nome_escola, etapa_ensino, count(*)
+FROM alunos_censo_2025
+WHERE cod_inep_escola in (12006440, 12001791) AND tipo_turma = 'Curricular (etapa de ensino)'
+GROUP BY nome_escola, etapa_ensino
+
+SELECT id, municipio, dependencia_administrativa, localizacao_escola, cod_inep_escola, nome_escola, codigo_turma, nome_turma, etapa_ensino,
+	local_funcionamento_diferenciado_da_turma, dias_semana_horario, tipo_aee, classe_especial, etapa_agregada, organizacao_curricular_turma, cod_inep_aluno, nome, cpf
+FROM alunos_censo_2025
+WHERE cod_inep_aluno = 110000679479
+ORDER BY localizacao_escola, nome_escola
+
+SELECT ano, rede, local, sum(infantil), sum(creche), sum(pre), sum(ef1), sum(ef2), sum(ef_multi), sum(medio), sum(profissional), sum(eja)
+FROM `escolas_rurais` 
+WHERE 1
+GROUP BY ano, rede, local
+ORDER BY ano, rede, local
+
+SELECT ano, rede, local, sum(infantil), sum(creche), sum(pre), sum(ef1), sum(ef2), sum(ef_multi), sum(medio), sum(profissional), sum(eja)
+FROM `escolas_rurais` 
+WHERE NOT (escola LIKE '%INDIGENA%' OR escola LIKE '%INDÍGENA%')
+GROUP BY ano, rede, local
+ORDER BY ano, rede, local
+

@@ -133,3 +133,8 @@ WHERE NOT (escola LIKE '%INDIGENA%' OR escola LIKE '%INDÍGENA%')
 GROUP BY ano, rede, local
 ORDER BY ano, rede, local
 
+SELECT municipio, cod_inep_escola, nome_escola, localizacao_escola, COUNT(DISTINCT cod_inep_aluno) AS total_alunos_unicos 
+FROM alunos_censo_2025
+WHERE dependencia_administrativa = 'Estadual'
+GROUP BY municipio, cod_inep_escola, nome_escola, localizacao_escola
+ORDER BY municipio, cod_inep_escola, nome_escola, localizacao_escola
